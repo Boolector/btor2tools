@@ -22,8 +22,8 @@
 #include "btorsimbv.h"
 #include "btorsimrng.h"
 #include "btor2parser/btor2parser.h"
-#include "util/btorfmtmem.h"
-#include "util/btorfmtstack.h"
+#include "util/btor2mem.h"
+#include "util/btor2stack.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -134,7 +134,7 @@ static int random_mode   = 0;
 
 static Btor2Parser *model;
 
-BTORFMT_DECLARE_STACK (Btor2LinePtr, Btor2Line *);
+BTOR2_DECLARE_STACK (Btor2LinePtr, Btor2Line *);
 
 static Btor2LinePtrStack inputs;
 static Btor2LinePtrStack states;
@@ -142,7 +142,7 @@ static Btor2LinePtrStack bads;
 static Btor2LinePtrStack constraints;
 static Btor2LinePtrStack justices;
 
-BTORFMT_DECLARE_STACK (BtorLong, long);
+BTOR2_DECLARE_STACK (BtorLong, long);
 
 static BtorLongStack reached_bads;
 
@@ -163,19 +163,19 @@ parse_model_line (Btor2Line *l)
   {
     case BTOR2_TAG_bad:
     {
-      long i = (long) BTORFMT_COUNT_STACK (bads);
+      long i = (long) BTOR2_COUNT_STACK (bads);
       msg (2, "bad %ld at line %ld", i, l->lineno);
-      BTORFMT_PUSH_STACK (bads, l);
-      BTORFMT_PUSH_STACK (reached_bads, -1);
+      BTOR2_PUSH_STACK (bads, l);
+      BTOR2_PUSH_STACK (reached_bads, -1);
       num_unreached_bads++;
     }
     break;
 
     case BTOR2_TAG_constraint:
     {
-      long i = (long) BTORFMT_COUNT_STACK (constraints);
+      long i = (long) BTOR2_COUNT_STACK (constraints);
       msg (2, "constraint %ld at line %ld", i, l->lineno);
-      BTORFMT_PUSH_STACK (constraints, l);
+      BTOR2_PUSH_STACK (constraints, l);
     }
     break;
 
@@ -183,12 +183,12 @@ parse_model_line (Btor2Line *l)
 
     case BTOR2_TAG_input:
     {
-      long i = (long) BTORFMT_COUNT_STACK (inputs);
+      long i = (long) BTOR2_COUNT_STACK (inputs);
       if (l->symbol)
         msg (2, "input %ld '%s' at line %ld", i, l->symbol, l->lineno);
       else
         msg (2, "input %ld at line %ld", i, l->lineno);
-      BTORFMT_PUSH_STACK (inputs, l);
+      BTOR2_PUSH_STACK (inputs, l);
     }
     break;
 
@@ -215,12 +215,12 @@ parse_model_line (Btor2Line *l)
 
     case BTOR2_TAG_state:
     {
-      long i = (long) BTORFMT_COUNT_STACK (states);
+      long i = (long) BTOR2_COUNT_STACK (states);
       if (l->symbol)
         msg (2, "state %ld '%s' at line %ld", i, l->symbol, l->lineno);
       else
         msg (2, "state %ld at line %ld", i, l->lineno);
-      BTORFMT_PUSH_STACK (states, l);
+      BTOR2_PUSH_STACK (states, l);
     }
     break;
 
@@ -300,19 +300,19 @@ parse_model_line (Btor2Line *l)
 static void
 parse_model ()
 {
-  BTORFMT_INIT_STACK (inputs);
-  BTORFMT_INIT_STACK (states);
-  BTORFMT_INIT_STACK (bads);
-  BTORFMT_INIT_STACK (justices);
-  BTORFMT_INIT_STACK (reached_bads);
-  BTORFMT_INIT_STACK (constraints);
+  BTOR2_INIT_STACK (inputs);
+  BTOR2_INIT_STACK (states);
+  BTOR2_INIT_STACK (bads);
+  BTOR2_INIT_STACK (justices);
+  BTOR2_INIT_STACK (reached_bads);
+  BTOR2_INIT_STACK (constraints);
   assert (model_file);
   model = btor2parser_new ();
   if (!btor2parser_read_lines (model, model_file))
     die ("parse error in '%s' at %s", model_path, btor2parser_error (model));
   num_format_lines = btor2parser_max_id (model);
-  BTORFMT_CNEWN (inits, num_format_lines);
-  BTORFMT_CNEWN (nexts, num_format_lines);
+  BTOR2_CNEWN (inits, num_format_lines);
+  BTOR2_CNEWN (nexts, num_format_lines);
   Btor2LineIterator it = btor2parser_iter_init (model);
   Btor2Line *line;
   while ((line = btor2parser_iter_next (&it))) parse_model_line (line);
@@ -498,9 +498,9 @@ initialize_inputs (long k, int randomize)
 {
   msg (1, "initializing inputs @%ld", k);
   if (print_trace) printf ("@%ld\n", k);
-  for (long i = 0; i < BTORFMT_COUNT_STACK (inputs); i++)
+  for (long i = 0; i < BTOR2_COUNT_STACK (inputs); i++)
   {
-    Btor2Line *input = BTORFMT_PEEK_STACK (inputs, i);
+    Btor2Line *input = BTOR2_PEEK_STACK (inputs, i);
     uint32_t width        = input->sort.bitvec.width;
     if (current_state[input->id]) continue;
     BtorSimBitVector *update;
@@ -524,9 +524,9 @@ initialize_states (int randomly)
 {
   msg (1, "initializing states at #0");
   if (print_trace) printf ("#0\n");
-  for (long i = 0; i < BTORFMT_COUNT_STACK (states); i++)
+  for (long i = 0; i < BTOR2_COUNT_STACK (states); i++)
   {
-    Btor2Line *state = BTORFMT_PEEK_STACK (states, i);
+    Btor2Line *state = BTOR2_PEEK_STACK (states, i);
     assert (0 <= state->id), assert (state->id < num_format_lines);
     if (current_state[state->id]) continue;
     Btor2Line *init = inits[state->id];
@@ -579,9 +579,9 @@ simulate_step (long k, int randomize_states_that_are_inputs)
 #endif
     btorsim_bv_free (bv);
   }
-  for (long i = 0; i < BTORFMT_COUNT_STACK (states); i++)
+  for (long i = 0; i < BTOR2_COUNT_STACK (states); i++)
   {
-    Btor2Line *state = BTORFMT_PEEK_STACK (states, i);
+    Btor2Line *state = BTOR2_PEEK_STACK (states, i);
     assert (0 <= state->id), assert (state->id < num_format_lines);
     Btor2Line *next = nexts[state->id];
     BtorSimBitVector *update;
@@ -606,9 +606,9 @@ simulate_step (long k, int randomize_states_that_are_inputs)
 
   if (constraints_violated < 0)
   {
-    for (long i = 0; i < BTORFMT_COUNT_STACK (constraints); i++)
+    for (long i = 0; i < BTOR2_COUNT_STACK (constraints); i++)
     {
-      Btor2Line *constraint = BTORFMT_PEEK_STACK (constraints, i);
+      Btor2Line *constraint = BTOR2_PEEK_STACK (constraints, i);
       BtorSimBitVector *bv       = current_state[constraint->args[0]];
       if (!btorsim_bv_is_zero (bv)) continue;
       msg (1,
@@ -623,21 +623,21 @@ simulate_step (long k, int randomize_states_that_are_inputs)
 
   if (constraints_violated < 0)
   {
-    for (long i = 0; i < BTORFMT_COUNT_STACK (bads); i++)
+    for (long i = 0; i < BTOR2_COUNT_STACK (bads); i++)
     {
-      long r = BTORFMT_PEEK_STACK (reached_bads, i);
+      long r = BTOR2_PEEK_STACK (reached_bads, i);
       if (r >= 0) continue;
-      Btor2Line *bad  = BTORFMT_PEEK_STACK (bads, i);
+      Btor2Line *bad  = BTOR2_PEEK_STACK (bads, i);
       BtorSimBitVector *bv = current_state[bad->args[0]];
       if (btorsim_bv_is_zero (bv)) continue;
-      long bound = BTORFMT_PEEK_STACK (reached_bads, i);
+      long bound = BTOR2_PEEK_STACK (reached_bads, i);
       if (bound >= 0) continue;
-      BTORFMT_POKE_STACK (reached_bads, i, k);
+      BTOR2_POKE_STACK (reached_bads, i, k);
       assert (num_unreached_bads > 0);
       if (!--num_unreached_bads)
         msg (1,
              "all %ld bad state properties reached",
-             (long) BTORFMT_COUNT_STACK (bads));
+             (long) BTOR2_COUNT_STACK (bads));
     }
   }
 }
@@ -648,9 +648,9 @@ transition (long k)
   msg (1, "transition %ld", k);
   for (long i = 0; i < num_format_lines; i++) delete_current_state (i);
   if (print_trace && print_states) printf ("#%ld\n", k);
-  for (long i = 0; i < BTORFMT_COUNT_STACK (states); i++)
+  for (long i = 0; i < BTOR2_COUNT_STACK (states); i++)
   {
-    Btor2Line *state = BTORFMT_PEEK_STACK (states, i);
+    Btor2Line *state = BTOR2_PEEK_STACK (states, i);
     assert (0 <= state->id), assert (state->id < num_format_lines);
     BtorSimBitVector *update = next_state[state->id];
     assert (update);
@@ -669,22 +669,22 @@ transition (long k)
 static void
 report ()
 {
-  if (verbosity && num_unreached_bads < BTORFMT_COUNT_STACK (bads))
+  if (verbosity && num_unreached_bads < BTOR2_COUNT_STACK (bads))
   {
     printf ("[btorsim] reached bad state properties {");
-    for (long i = 0; i < BTORFMT_COUNT_STACK (bads); i++)
+    for (long i = 0; i < BTOR2_COUNT_STACK (bads); i++)
     {
-      long r = BTORFMT_PEEK_STACK (reached_bads, i);
+      long r = BTOR2_PEEK_STACK (reached_bads, i);
       if (r >= 0) printf (" b%ld@%ld", i, r);
     }
     printf (" }\n");
   }
-  else if (!BTORFMT_EMPTY_STACK (bads))
+  else if (!BTOR2_EMPTY_STACK (bads))
     msg (1, "no bad state property reached");
 
   if (constraints_violated >= 0)
     msg (1, "constraints violated at time %ld", constraints_violated);
-  else if (!BTORFMT_EMPTY_STACK (constraints))
+  else if (!BTOR2_EMPTY_STACK (constraints))
     msg (1, "constraints always satisfied");
 }
 
@@ -860,23 +860,23 @@ parse_assignment ()
   prev_char (ch);
   long res = parse_unsigned_number (&ch);
   if (ch != ' ') parse_error ("space missing after '%ld'", res);
-  BTORFMT_RESET_STACK (constant);
+  BTOR2_RESET_STACK (constant);
   constant_columno = columno + 1;
   while ((ch = next_char ()) == '0' || ch == '1')
-    BTORFMT_PUSH_STACK (constant, ch);
+    BTOR2_PUSH_STACK (constant, ch);
   if (ch == '[') parse_error ("can not handle array assignments yet");
-  if (BTORFMT_EMPTY_STACK (constant)) parse_error ("empty constant");
-  if (BTORFMT_EMPTY_STACK (constant))
+  if (BTOR2_EMPTY_STACK (constant)) parse_error ("empty constant");
+  if (BTOR2_EMPTY_STACK (constant))
     if (ch != ' ' && ch != '\n')
       parse_error ("expected space or new-line after assignment");
-  BTORFMT_PUSH_STACK (constant, 0);
-  BTORFMT_RESET_STACK (symbol);
+  BTOR2_PUSH_STACK (constant, 0);
+  BTOR2_RESET_STACK (symbol);
   while (ch != '\n')
     if ((ch = next_char ()) == EOF)
       parse_error ("unexpected end-of-file in assignment");
     else if (ch != '\n')
-      BTORFMT_PUSH_STACK (symbol, ch);
-  if (!BTORFMT_EMPTY_STACK (symbol)) BTORFMT_PUSH_STACK (symbol, 0);
+      BTOR2_PUSH_STACK (symbol, ch);
+  if (!BTOR2_EMPTY_STACK (symbol)) BTOR2_PUSH_STACK (symbol, 0);
   return res;
 }
 
@@ -901,9 +901,9 @@ parse_state_part (long k)
     charno            = 1;
     assert (lineno > 1);
     lineno--;
-    if (state_pos >= BTORFMT_COUNT_STACK (states))
+    if (state_pos >= BTOR2_COUNT_STACK (states))
       parse_error ("less than %ld states defined", state_pos);
-    if (BTORFMT_EMPTY_STACK (symbol))
+    if (BTOR2_EMPTY_STACK (symbol))
       msg (4,
            "state assignment '%ld %s' at time frame %ld",
            state_pos,
@@ -916,7 +916,7 @@ parse_state_part (long k)
            constant.start,
            symbol.start,
            k);
-    Btor2Line *state = BTORFMT_PEEK_STACK (states, state_pos);
+    Btor2Line *state = BTOR2_PEEK_STACK (states, state_pos);
     assert (state);
     if (strlen (constant.start) != state->sort.bitvec.width)
       charno = constant_columno,
@@ -959,9 +959,9 @@ parse_input_part (long k)
     charno            = 1;
     assert (lineno > 1);
     lineno--;
-    if (input_pos >= BTORFMT_COUNT_STACK (inputs))
+    if (input_pos >= BTOR2_COUNT_STACK (inputs))
       parse_error ("less than %ld defined", input_pos);
-    if (BTORFMT_EMPTY_STACK (symbol))
+    if (BTOR2_EMPTY_STACK (symbol))
       msg (4,
            "input assignment '%ld %s' at time frame %ld",
            input_pos,
@@ -974,7 +974,7 @@ parse_input_part (long k)
            constant.start,
            symbol.start,
            k);
-    Btor2Line *input = BTORFMT_PEEK_STACK (inputs, input_pos);
+    Btor2Line *input = BTOR2_PEEK_STACK (inputs, input_pos);
     assert (input);
     if (strlen (constant.start) != input->sort.bitvec.width)
       charno = constant_columno,
@@ -1013,8 +1013,8 @@ parse_sat_witness ()
 
   msg (1, "parsing 'sat' witness %ld", count_sat_witnesses);
 
-  BTORFMT_INIT_STACK (claimed_bad_witnesses);
-  BTORFMT_INIT_STACK (claimed_justice_witnesses);
+  BTOR2_INIT_STACK (claimed_bad_witnesses);
+  BTOR2_INIT_STACK (claimed_justice_witnesses);
 
   for (;;)
   {
@@ -1038,12 +1038,12 @@ parse_sat_witness ()
     }
     if (type == 'b')
     {
-      if (bad >= BTORFMT_COUNT_STACK (bads))
+      if (bad >= BTOR2_COUNT_STACK (bads))
         parse_error ("invalid bad state property number %ld", bad);
       msg (3,
            "... claims to be witness of bad state property number 'b%ld'",
            bad);
-      BTORFMT_PUSH_STACK (claimed_bad_witnesses, bad);
+      BTOR2_PUSH_STACK (claimed_bad_witnesses, bad);
     }
     else
       parse_error ("can not handle justice properties yet");
@@ -1059,19 +1059,19 @@ parse_sat_witness ()
   report ();
   if (print_trace) printf (".\n"), fflush (stdout);
 
-  for (long i = 0; i < BTORFMT_COUNT_STACK (claimed_bad_witnesses); i++)
+  for (long i = 0; i < BTOR2_COUNT_STACK (claimed_bad_witnesses); i++)
   {
-    long bad_pos      = BTORFMT_PEEK_STACK (claimed_bad_witnesses, i);
-    long bound        = BTORFMT_PEEK_STACK (reached_bads, bad_pos);
-    Btor2Line *l = BTORFMT_PEEK_STACK (bads, bad_pos);
+    long bad_pos      = BTOR2_PEEK_STACK (claimed_bad_witnesses, i);
+    long bound        = BTOR2_PEEK_STACK (reached_bads, bad_pos);
+    Btor2Line *l = BTOR2_PEEK_STACK (bads, bad_pos);
     if (bound < 0)
       die ("claimed bad state property 'b%ld' id %ld not reached",
            bad_pos,
            l->id);
   }
 
-  BTORFMT_RELEASE_STACK (claimed_bad_witnesses);
-  BTORFMT_RELEASE_STACK (claimed_justice_witnesses);
+  BTOR2_RELEASE_STACK (claimed_bad_witnesses);
+  BTOR2_RELEASE_STACK (claimed_justice_witnesses);
 }
 
 static void
@@ -1166,13 +1166,13 @@ parse_and_check_witness ()
 static void
 parse_and_check_all_witnesses ()
 {
-  BTORFMT_INIT_STACK (constant);
-  BTORFMT_INIT_STACK (symbol);
+  BTOR2_INIT_STACK (constant);
+  BTOR2_INIT_STACK (symbol);
   assert (witness_file);
   while (parse_and_check_witness ())
     ;
-  BTORFMT_RELEASE_STACK (constant);
-  BTORFMT_RELEASE_STACK (symbol);
+  BTOR2_RELEASE_STACK (constant);
+  BTOR2_RELEASE_STACK (symbol);
   msg (1,
        "finished parsing %ld witnesses after reading %ld bytes (%.1f MB)",
        count_witnesses,
@@ -1270,14 +1270,14 @@ main (int argc, char **argv)
   assert (model_path);
   msg (1, "reading BTOR model from '%s'", model_path);
   parse_model ();
-  if (fake_bad >= BTORFMT_COUNT_STACK (bads))
+  if (fake_bad >= BTOR2_COUNT_STACK (bads))
     die ("invalid faked bad state property number %ld", fake_bad);
-  if (fake_justice >= BTORFMT_COUNT_STACK (justices))
+  if (fake_justice >= BTOR2_COUNT_STACK (justices))
     die ("invalid faked justice property number %ld", fake_justice);
   if (close_model_file && fclose (model_file))
     die ("can not close model file '%s'", model_path);
-  BTORFMT_CNEWN (current_state, num_format_lines);
-  BTORFMT_CNEWN (next_state, num_format_lines);
+  BTOR2_CNEWN (current_state, num_format_lines);
+  BTOR2_CNEWN (next_state, num_format_lines);
   if (random_mode)
   {
     if (r < 0) r = 20;
@@ -1303,20 +1303,20 @@ main (int argc, char **argv)
     if (close_witness_file && fclose (witness_file))
       die ("can not close witness file '%s'", witness_path);
   }
-  BTORFMT_RELEASE_STACK (inputs);
-  BTORFMT_RELEASE_STACK (states);
-  BTORFMT_RELEASE_STACK (bads);
-  BTORFMT_RELEASE_STACK (justices);
-  BTORFMT_RELEASE_STACK (reached_bads);
-  BTORFMT_RELEASE_STACK (constraints);
+  BTOR2_RELEASE_STACK (inputs);
+  BTOR2_RELEASE_STACK (states);
+  BTOR2_RELEASE_STACK (bads);
+  BTOR2_RELEASE_STACK (justices);
+  BTOR2_RELEASE_STACK (reached_bads);
+  BTOR2_RELEASE_STACK (constraints);
   btor2parser_delete (model);
-  BTORFMT_DELETE (inits);
-  BTORFMT_DELETE (nexts);
+  BTOR2_DELETE (inits);
+  BTOR2_DELETE (nexts);
   for (long i = 0; i < num_format_lines; i++)
     if (current_state[i]) btorsim_bv_free (current_state[i]);
   for (long i = 0; i < num_format_lines; i++)
     if (next_state[i]) btorsim_bv_free (next_state[i]);
-  BTORFMT_DELETE (current_state);
-  BTORFMT_DELETE (next_state);
+  BTOR2_DELETE (current_state);
+  BTOR2_DELETE (next_state);
   return 0;
 }

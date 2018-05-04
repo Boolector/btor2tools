@@ -12,12 +12,12 @@
  *  See LICENSE.txt for more information on using this software.
  */
 
-#ifndef BTORFMTSTACK_H_INCLUDED
-#define BTORFMTSTACK_H_INCLUDED
+#ifndef BTOR2STACK_H_INCLUDED
+#define BTOR2STACK_H_INCLUDED
 
-#include "btorfmtmem.h"
+#include "btor2mem.h"
 
-#define BTORFMT_DECLARE_STACK(name, type) \
+#define BTOR2_DECLARE_STACK(name, type) \
   typedef struct name##Stack name##Stack; \
   struct name##Stack                      \
   {                                       \
@@ -26,11 +26,11 @@
     type *end;                            \
   }
 
-BTORFMT_DECLARE_STACK (BtorChar, char);
-BTORFMT_DECLARE_STACK (BtorCharPtr, char *);
-BTORFMT_DECLARE_STACK (BtorVoidPtr, void *);
+BTOR2_DECLARE_STACK (BtorChar, char);
+BTOR2_DECLARE_STACK (BtorCharPtr, char *);
+BTOR2_DECLARE_STACK (BtorVoidPtr, void *);
 
-#define BTORFMT_INIT_STACK(stack) \
+#define BTOR2_INIT_STACK(stack) \
   do                              \
   {                               \
     (stack).start = 0;            \
@@ -38,54 +38,54 @@ BTORFMT_DECLARE_STACK (BtorVoidPtr, void *);
     (stack).end   = 0;            \
   } while (0)
 
-#define BTORFMT_COUNT_STACK(stack) ((stack).top - (stack).start)
-#define BTORFMT_SIZE_STACK(stack) ((stack).end - (stack).start)
-#define BTORFMT_EMPTY_STACK(stack) ((stack).top == (stack).start)
-#define BTORFMT_FULL_STACK(stack) ((stack).top == (stack).end)
-#define BTORFMT_RESET_STACK(stack) ((stack).top = (stack).start)
+#define BTOR2_COUNT_STACK(stack) ((stack).top - (stack).start)
+#define BTOR2_SIZE_STACK(stack) ((stack).end - (stack).start)
+#define BTOR2_EMPTY_STACK(stack) ((stack).top == (stack).start)
+#define BTOR2_FULL_STACK(stack) ((stack).top == (stack).end)
+#define BTOR2_RESET_STACK(stack) ((stack).top = (stack).start)
 
-#define BTORFMT_RELEASE_STACK(stack) \
+#define BTOR2_RELEASE_STACK(stack) \
   do                                 \
   {                                  \
-    BTORFMT_DELETE ((stack).start);  \
-    BTORFMT_INIT_STACK ((stack));    \
+    BTOR2_DELETE ((stack).start);  \
+    BTOR2_INIT_STACK ((stack));    \
   } while (0)
 
-#define BTORFMT_ENLARGE(p, o, n)          \
+#define BTOR2_ENLARGE(p, o, n)          \
   do                                      \
   {                                       \
     size_t internaln = (o) ? 2 * (o) : 1; \
-    BTORFMT_REALLOC ((p), internaln);     \
+    BTOR2_REALLOC ((p), internaln);     \
     (n) = internaln;                      \
   } while (0)
 
-#define BTORFMT_ENLARGE_STACK(stack)                         \
+#define BTOR2_ENLARGE_STACK(stack)                         \
   do                                                         \
   {                                                          \
-    size_t old_size  = BTORFMT_SIZE_STACK (stack), new_size; \
-    size_t old_count = BTORFMT_COUNT_STACK (stack);          \
-    BTORFMT_ENLARGE ((stack).start, old_size, new_size);     \
+    size_t old_size  = BTOR2_SIZE_STACK (stack), new_size; \
+    size_t old_count = BTOR2_COUNT_STACK (stack);          \
+    BTOR2_ENLARGE ((stack).start, old_size, new_size);     \
     (stack).top = (stack).start + old_count;                 \
     (stack).end = (stack).start + new_size;                  \
   } while (0)
 
-#define BTORFMT_PUSH_STACK(stack, elem)                                \
+#define BTOR2_PUSH_STACK(stack, elem)                                \
   do                                                                   \
   {                                                                    \
-    if (BTORFMT_FULL_STACK ((stack))) BTORFMT_ENLARGE_STACK ((stack)); \
+    if (BTOR2_FULL_STACK ((stack))) BTOR2_ENLARGE_STACK ((stack)); \
     *((stack).top++) = (elem);                                         \
   } while (0)
 
-#define BTORFMT_POP_STACK(stack) \
-  (assert (!BTORFMT_EMPTY_STACK (stack)), (*--(stack).top))
+#define BTOR2_POP_STACK(stack) \
+  (assert (!BTOR2_EMPTY_STACK (stack)), (*--(stack).top))
 
-#define BTORFMT_PEEK_STACK(stack, idx) \
-  (assert ((idx) < BTORFMT_COUNT_STACK (stack)), (stack).start[idx])
+#define BTOR2_PEEK_STACK(stack, idx) \
+  (assert ((idx) < BTOR2_COUNT_STACK (stack)), (stack).start[idx])
 
-#define BTORFMT_POKE_STACK(stack, idx, elem)      \
+#define BTOR2_POKE_STACK(stack, idx, elem)      \
   do                                              \
   {                                               \
-    assert ((idx) < BTORFMT_COUNT_STACK (stack)); \
+    assert ((idx) < BTOR2_COUNT_STACK (stack)); \
     (stack).start[idx] = (elem);                  \
   } while (0)
 

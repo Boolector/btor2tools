@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util/btorfmtstack.h"
+#include "util/btor2stack.h"
 
 struct Btor2Parser
 {
@@ -1208,7 +1208,7 @@ parse_input_bfr (Btor2Parser *bfr, Btor2Line *l)
   return parse_sort_id_bfr (bfr, &l->sort);
 }
 
-BTORFMT_DECLARE_STACK (Btor2Long, long);
+BTOR2_DECLARE_STACK (Btor2Long, long);
 
 static int
 check_state_init (Btor2Parser *bfr, long state_id, long init_id)
@@ -1230,11 +1230,11 @@ check_state_init (Btor2Parser *bfr, long state_id, long init_id)
   cache       = btor2parser_malloc (size);
   memset (cache, 0, size);
 
-  BTORFMT_INIT_STACK (stack);
-  BTORFMT_PUSH_STACK (stack, init_id);
+  BTOR2_INIT_STACK (stack);
+  BTOR2_PUSH_STACK (stack, init_id);
   do
   {
-    id = BTORFMT_POP_STACK (stack);
+    id = BTOR2_POP_STACK (stack);
     assert (id);
     if (id < 0) id = -id;
 
@@ -1253,8 +1253,8 @@ check_state_init (Btor2Parser *bfr, long state_id, long init_id)
                       id);
       break;
     }
-    for (i = 0; i < line->nargs; i++) BTORFMT_PUSH_STACK (stack, line->args[i]);
-  } while (!BTORFMT_EMPTY_STACK (stack));
+    for (i = 0; i < line->nargs; i++) BTOR2_PUSH_STACK (stack, line->args[i]);
+  } while (!BTOR2_EMPTY_STACK (stack));
 
   free (cache);
   return res;
