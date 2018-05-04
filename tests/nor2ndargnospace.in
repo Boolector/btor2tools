@@ -1,2 +1,3 @@
-1 zero 32
-2 nor 32 1 1nospace
+1 sort bitvec 32
+2 zero 1
+3 nor 1 3 3nospace

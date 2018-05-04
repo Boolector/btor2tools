@@ -1,7 +1,8 @@
 
 ; comment followed by new line
 
-1 zero 32
+1 sort bitvec 2
+2 zero 1
 
 ; next line starts with a tab
 	

@@ -1,3 +1,6 @@
-1 array 8 32 mem
-2 var 8 x
-3 add 8 1 2
+1 sort bitvec 8
+2 sort bitvec 32
+3 sort array 1 2
+4 input 3 mem
+5 input 1 x
+6 add 1 4 5
