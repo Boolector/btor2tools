@@ -1,5 +1,5 @@
 /**
- *  BtorFMT: A tool package for the BTOR format.
+ *  Btor2Tools: A tool package for the BTOR format.
  *
  *  Copyright (c) 2013-2017 Mathias Preiner.
  *  Copyright (c) 2015-2018 Aina Niemetz.
@@ -7,7 +7,7 @@
  *
  *  All rights reserved.
  *
- *  This file is part of the BtorFMT package.
+ *  This file is part of the Btor2Tools package.
  *  See LICENSE.txt for more information on using this software.
  */
 

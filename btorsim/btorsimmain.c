@@ -1,12 +1,12 @@
 /**
- *  BtorFMT: A tool package for the BTOR format.
+ *  Btor2Tools: A tool package for the BTOR format.
  *
  *  Copyright (c) 2018 Armin Biere.
  *  Copyright (c) 2018 Aina Niemetz.
  *
  *  All rights reserved.
  *
- *  This file is part of the BtorFMT package.
+ *  This file is part of the Btor2Tools package.
  *  See LICENSE.txt for more information on using this software.
  */
 
@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "btorfmt.h"
 #include "btorsimbv.h"
 #include "btorsimrng.h"
+#include "btor2parser/btor2parser.h"
 #include "util/btorfmtmem.h"
 #include "util/btorfmtstack.h"
 
@@ -132,15 +132,15 @@ parse_long (const char *str, long *res_ptr)
 static int checking_mode = 0;
 static int random_mode   = 0;
 
-static BtorFormatReader *model;
+static Btor2Parser *model;
 
-BTORFMT_DECLARE_STACK (BtorFormatLinePtr, BtorFormatLine *);
+BTORFMT_DECLARE_STACK (Btor2LinePtr, Btor2Line *);
 
-static BtorFormatLinePtrStack inputs;
-static BtorFormatLinePtrStack states;
-static BtorFormatLinePtrStack bads;
-static BtorFormatLinePtrStack constraints;
-static BtorFormatLinePtrStack justices;
+static Btor2LinePtrStack inputs;
+static Btor2LinePtrStack states;
+static Btor2LinePtrStack bads;
+static Btor2LinePtrStack constraints;
+static Btor2LinePtrStack justices;
 
 BTORFMT_DECLARE_STACK (BtorLong, long);
 
@@ -150,18 +150,18 @@ static long constraints_violated = -1;
 static long num_unreached_bads;
 
 static long num_format_lines;
-static BtorFormatLine **inits;
-static BtorFormatLine **nexts;
+static Btor2Line **inits;
+static Btor2Line **nexts;
 
 static BtorSimBitVector **current_state;
 static BtorSimBitVector **next_state;
 
 static void
-parse_model_line (BtorFormatLine *l)
+parse_model_line (Btor2Line *l)
 {
   switch (l->tag)
   {
-    case BTOR_FORMAT_TAG_bad:
+    case BTOR2_TAG_bad:
     {
       long i = (long) BTORFMT_COUNT_STACK (bads);
       msg (2, "bad %ld at line %ld", i, l->lineno);
@@ -171,7 +171,7 @@ parse_model_line (BtorFormatLine *l)
     }
     break;
 
-    case BTOR_FORMAT_TAG_constraint:
+    case BTOR2_TAG_constraint:
     {
       long i = (long) BTORFMT_COUNT_STACK (constraints);
       msg (2, "constraint %ld at line %ld", i, l->lineno);
@@ -179,9 +179,9 @@ parse_model_line (BtorFormatLine *l)
     }
     break;
 
-    case BTOR_FORMAT_TAG_init: inits[l->args[0]] = l; break;
+    case BTOR2_TAG_init: inits[l->args[0]] = l; break;
 
-    case BTOR_FORMAT_TAG_input:
+    case BTOR2_TAG_input:
     {
       long i = (long) BTORFMT_COUNT_STACK (inputs);
       if (l->symbol)
@@ -192,17 +192,17 @@ parse_model_line (BtorFormatLine *l)
     }
     break;
 
-    case BTOR_FORMAT_TAG_next: nexts[l->args[0]] = l; break;
+    case BTOR2_TAG_next: nexts[l->args[0]] = l; break;
 
-    case BTOR_FORMAT_TAG_sort:
+    case BTOR2_TAG_sort:
     {
       switch (l->sort.tag)
       {
-        case BTOR_FORMAT_TAG_SORT_bitvec:
+        case BTOR2_TAG_SORT_bitvec:
           msg (
               2, "sort bitvec %u at line %ld", l->sort.bitvec.width, l->lineno);
           break;
-        case BTOR_FORMAT_TAG_SORT_array:
+        case BTOR2_TAG_SORT_array:
         default:
           die ("parse error in '%s' at line %ld: unsupported sort '%s'",
                model_path,
@@ -213,7 +213,7 @@ parse_model_line (BtorFormatLine *l)
     }
     break;
 
-    case BTOR_FORMAT_TAG_state:
+    case BTOR2_TAG_state:
     {
       long i = (long) BTORFMT_COUNT_STACK (states);
       if (l->symbol)
@@ -224,68 +224,68 @@ parse_model_line (BtorFormatLine *l)
     }
     break;
 
-    case BTOR_FORMAT_TAG_add:
-    case BTOR_FORMAT_TAG_and:
-    case BTOR_FORMAT_TAG_concat:
-    case BTOR_FORMAT_TAG_const:
-    case BTOR_FORMAT_TAG_constd:
-    case BTOR_FORMAT_TAG_consth:
-    case BTOR_FORMAT_TAG_eq:
-    case BTOR_FORMAT_TAG_implies:
-    case BTOR_FORMAT_TAG_ite:
-    case BTOR_FORMAT_TAG_mul:
-    case BTOR_FORMAT_TAG_nand:
-    case BTOR_FORMAT_TAG_ne:
-    case BTOR_FORMAT_TAG_nor:
-    case BTOR_FORMAT_TAG_not:
-    case BTOR_FORMAT_TAG_one:
-    case BTOR_FORMAT_TAG_ones:
-    case BTOR_FORMAT_TAG_or:
-    case BTOR_FORMAT_TAG_redand:
-    case BTOR_FORMAT_TAG_redor:
-    case BTOR_FORMAT_TAG_slice:
-    case BTOR_FORMAT_TAG_sub:
-    case BTOR_FORMAT_TAG_uext:
-    case BTOR_FORMAT_TAG_ugt:
-    case BTOR_FORMAT_TAG_ugte:
-    case BTOR_FORMAT_TAG_ult:
-    case BTOR_FORMAT_TAG_ulte:
-    case BTOR_FORMAT_TAG_xnor:
-    case BTOR_FORMAT_TAG_xor:
-    case BTOR_FORMAT_TAG_zero: break;
+    case BTOR2_TAG_add:
+    case BTOR2_TAG_and:
+    case BTOR2_TAG_concat:
+    case BTOR2_TAG_const:
+    case BTOR2_TAG_constd:
+    case BTOR2_TAG_consth:
+    case BTOR2_TAG_eq:
+    case BTOR2_TAG_implies:
+    case BTOR2_TAG_ite:
+    case BTOR2_TAG_mul:
+    case BTOR2_TAG_nand:
+    case BTOR2_TAG_ne:
+    case BTOR2_TAG_nor:
+    case BTOR2_TAG_not:
+    case BTOR2_TAG_one:
+    case BTOR2_TAG_ones:
+    case BTOR2_TAG_or:
+    case BTOR2_TAG_redand:
+    case BTOR2_TAG_redor:
+    case BTOR2_TAG_slice:
+    case BTOR2_TAG_sub:
+    case BTOR2_TAG_uext:
+    case BTOR2_TAG_ugt:
+    case BTOR2_TAG_ugte:
+    case BTOR2_TAG_ult:
+    case BTOR2_TAG_ulte:
+    case BTOR2_TAG_xnor:
+    case BTOR2_TAG_xor:
+    case BTOR2_TAG_zero: break;
 
-    case BTOR_FORMAT_TAG_dec:
-    case BTOR_FORMAT_TAG_fair:
-    case BTOR_FORMAT_TAG_iff:
-    case BTOR_FORMAT_TAG_inc:
-    case BTOR_FORMAT_TAG_justice:
-    case BTOR_FORMAT_TAG_neg:
-    case BTOR_FORMAT_TAG_output:
-    case BTOR_FORMAT_TAG_read:
-    case BTOR_FORMAT_TAG_redxor:
-    case BTOR_FORMAT_TAG_rol:
-    case BTOR_FORMAT_TAG_ror:
-    case BTOR_FORMAT_TAG_saddo:
-    case BTOR_FORMAT_TAG_sdiv:
-    case BTOR_FORMAT_TAG_sdivo:
-    case BTOR_FORMAT_TAG_sext:
-    case BTOR_FORMAT_TAG_sgt:
-    case BTOR_FORMAT_TAG_sgte:
-    case BTOR_FORMAT_TAG_sll:
-    case BTOR_FORMAT_TAG_slt:
-    case BTOR_FORMAT_TAG_slte:
-    case BTOR_FORMAT_TAG_smod:
-    case BTOR_FORMAT_TAG_smulo:
-    case BTOR_FORMAT_TAG_sra:
-    case BTOR_FORMAT_TAG_srem:
-    case BTOR_FORMAT_TAG_srl:
-    case BTOR_FORMAT_TAG_ssubo:
-    case BTOR_FORMAT_TAG_uaddo:
-    case BTOR_FORMAT_TAG_udiv:
-    case BTOR_FORMAT_TAG_umulo:
-    case BTOR_FORMAT_TAG_urem:
-    case BTOR_FORMAT_TAG_usubo:
-    case BTOR_FORMAT_TAG_write:
+    case BTOR2_TAG_dec:
+    case BTOR2_TAG_fair:
+    case BTOR2_TAG_iff:
+    case BTOR2_TAG_inc:
+    case BTOR2_TAG_justice:
+    case BTOR2_TAG_neg:
+    case BTOR2_TAG_output:
+    case BTOR2_TAG_read:
+    case BTOR2_TAG_redxor:
+    case BTOR2_TAG_rol:
+    case BTOR2_TAG_ror:
+    case BTOR2_TAG_saddo:
+    case BTOR2_TAG_sdiv:
+    case BTOR2_TAG_sdivo:
+    case BTOR2_TAG_sext:
+    case BTOR2_TAG_sgt:
+    case BTOR2_TAG_sgte:
+    case BTOR2_TAG_sll:
+    case BTOR2_TAG_slt:
+    case BTOR2_TAG_slte:
+    case BTOR2_TAG_smod:
+    case BTOR2_TAG_smulo:
+    case BTOR2_TAG_sra:
+    case BTOR2_TAG_srem:
+    case BTOR2_TAG_srl:
+    case BTOR2_TAG_ssubo:
+    case BTOR2_TAG_uaddo:
+    case BTOR2_TAG_udiv:
+    case BTOR2_TAG_umulo:
+    case BTOR2_TAG_urem:
+    case BTOR2_TAG_usubo:
+    case BTOR2_TAG_write:
     default:
       die ("parse error in '%s' at line %ld: unsupported '%ld %s%s'",
            model_path,
@@ -307,15 +307,15 @@ parse_model ()
   BTORFMT_INIT_STACK (reached_bads);
   BTORFMT_INIT_STACK (constraints);
   assert (model_file);
-  model = btorfmt_new ();
-  if (!btorfmt_read_lines (model, model_file))
-    die ("parse error in '%s' at %s", model_path, btorfmt_error (model));
-  num_format_lines = btorfmt_max_id (model);
+  model = btor2parser_new ();
+  if (!btor2parser_read_lines (model, model_file))
+    die ("parse error in '%s' at %s", model_path, btor2parser_error (model));
+  num_format_lines = btor2parser_max_id (model);
   BTORFMT_CNEWN (inits, num_format_lines);
   BTORFMT_CNEWN (nexts, num_format_lines);
-  BtorFormatLineIterator it = btorfmt_iter_init (model);
-  BtorFormatLine *line;
-  while ((line = btorfmt_iter_next (&it))) parse_model_line (line);
+  Btor2LineIterator it = btor2parser_iter_init (model);
+  Btor2Line *line;
+  while ((line = btor2parser_iter_next (&it))) parse_model_line (line);
 }
 
 static void
@@ -343,96 +343,96 @@ simulate (long id)
   BtorSimBitVector *res = current_state[id];
   if (!res)
   {
-    BtorFormatLine *l = btorfmt_get_line_by_id (model, id);
+    Btor2Line *l = btor2parser_get_line_by_id (model, id);
     if (!l) die ("internal error: unexpected empty ID %ld", id);
     BtorSimBitVector *args[3] = {0, 0, 0};
     for (uint32_t i = 0; i < l->nargs; i++) args[i] = simulate (l->args[i]);
     switch (l->tag)
     {
-      case BTOR_FORMAT_TAG_add:
+      case BTOR2_TAG_add:
         assert (l->nargs == 2);
         res = btorsim_bv_add (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_and:
+      case BTOR2_TAG_and:
         assert (l->nargs == 2);
         res = btorsim_bv_and (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_concat:
+      case BTOR2_TAG_concat:
         assert (l->nargs == 2);
         res = btorsim_bv_concat (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_const:
+      case BTOR2_TAG_const:
         assert (l->nargs == 0);
         res = btorsim_bv_char_to_bv (l->constant);
         break;
-      case BTOR_FORMAT_TAG_constd:
+      case BTOR2_TAG_constd:
         assert (l->nargs == 0);
         res = btorsim_bv_constd (l->constant, l->sort.bitvec.width);
         break;
-      case BTOR_FORMAT_TAG_consth:
+      case BTOR2_TAG_consth:
         assert (l->nargs == 0);
         res = btorsim_bv_consth (l->constant, l->sort.bitvec.width);
         break;
-      case BTOR_FORMAT_TAG_eq:
+      case BTOR2_TAG_eq:
         assert (l->nargs == 2);
         res = btorsim_bv_eq (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_implies:
+      case BTOR2_TAG_implies:
         assert (l->nargs == 2);
         res = btorsim_bv_implies (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_ite:
+      case BTOR2_TAG_ite:
         assert (l->nargs == 3);
         res = btorsim_bv_ite (args[0], args[1], args[2]);
         break;
-      case BTOR_FORMAT_TAG_mul:
+      case BTOR2_TAG_mul:
         assert (l->nargs == 2);
         res = btorsim_bv_mul (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_nand:
+      case BTOR2_TAG_nand:
         assert (l->nargs == 2);
         res = btorsim_bv_nand (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_ne:
+      case BTOR2_TAG_ne:
         assert (l->nargs == 2);
         res = btorsim_bv_ne (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_nor:
+      case BTOR2_TAG_nor:
         assert (l->nargs == 2);
         res = btorsim_bv_nor (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_not:
+      case BTOR2_TAG_not:
         assert (l->nargs == 1);
         res = btorsim_bv_not (args[0]);
         break;
-      case BTOR_FORMAT_TAG_one:
+      case BTOR2_TAG_one:
         res = btorsim_bv_one (l->sort.bitvec.width);
         break;
-      case BTOR_FORMAT_TAG_ones:
+      case BTOR2_TAG_ones:
         res = btorsim_bv_ones (l->sort.bitvec.width);
         break;
-      case BTOR_FORMAT_TAG_or:
+      case BTOR2_TAG_or:
         assert (l->nargs == 2);
         res = btorsim_bv_or (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_redand:
+      case BTOR2_TAG_redand:
         assert (l->nargs == 1);
         res = btorsim_bv_redand (args[0]);
         break;
-      case BTOR_FORMAT_TAG_redor:
+      case BTOR2_TAG_redor:
         assert (l->nargs == 1);
         res = btorsim_bv_redor (args[0]);
         break;
-      case BTOR_FORMAT_TAG_slice:
+      case BTOR2_TAG_slice:
         assert (l->nargs == 1);
         res = btorsim_bv_slice (args[0], l->args[1], l->args[2]);
         break;
-      case BTOR_FORMAT_TAG_sub:
+      case BTOR2_TAG_sub:
         assert (l->nargs == 2);
         res = btorsim_bv_sub (args[0], args[1]);
         break;
         break;
-      case BTOR_FORMAT_TAG_uext:
+      case BTOR2_TAG_uext:
         assert (l->nargs == 1);
         {
           uint32_t width = args[0]->width;
@@ -444,31 +444,31 @@ simulate (long id)
             res = btorsim_bv_copy (args[0]);
         }
         break;
-      case BTOR_FORMAT_TAG_ugt:
+      case BTOR2_TAG_ugt:
         assert (l->nargs == 2);
         res = btorsim_bv_ult (args[1], args[0]);
         break;
-      case BTOR_FORMAT_TAG_ugte:
+      case BTOR2_TAG_ugte:
         assert (l->nargs == 2);
         res = btorsim_bv_ulte (args[1], args[0]);
         break;
-      case BTOR_FORMAT_TAG_ult:
+      case BTOR2_TAG_ult:
         assert (l->nargs == 2);
         res = btorsim_bv_ult (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_ulte:
+      case BTOR2_TAG_ulte:
         assert (l->nargs == 2);
         res = btorsim_bv_ulte (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_xnor:
+      case BTOR2_TAG_xnor:
         assert (l->nargs == 2);
         res = btorsim_bv_xnor (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_xor:
+      case BTOR2_TAG_xor:
         assert (l->nargs == 2);
         res = btorsim_bv_xor (args[0], args[1]);
         break;
-      case BTOR_FORMAT_TAG_zero:
+      case BTOR2_TAG_zero:
         res = btorsim_bv_zero (l->sort.bitvec.width);
         break;
       default:
@@ -500,7 +500,7 @@ initialize_inputs (long k, int randomize)
   if (print_trace) printf ("@%ld\n", k);
   for (long i = 0; i < BTORFMT_COUNT_STACK (inputs); i++)
   {
-    BtorFormatLine *input = BTORFMT_PEEK_STACK (inputs, i);
+    Btor2Line *input = BTORFMT_PEEK_STACK (inputs, i);
     uint32_t width        = input->sort.bitvec.width;
     if (current_state[input->id]) continue;
     BtorSimBitVector *update;
@@ -526,10 +526,10 @@ initialize_states (int randomly)
   if (print_trace) printf ("#0\n");
   for (long i = 0; i < BTORFMT_COUNT_STACK (states); i++)
   {
-    BtorFormatLine *state = BTORFMT_PEEK_STACK (states, i);
+    Btor2Line *state = BTORFMT_PEEK_STACK (states, i);
     assert (0 <= state->id), assert (state->id < num_format_lines);
     if (current_state[state->id]) continue;
-    BtorFormatLine *init = inits[state->id];
+    Btor2Line *init = inits[state->id];
     BtorSimBitVector *update;
     if (init)
     {
@@ -539,7 +539,7 @@ initialize_states (int randomly)
     }
     else
     {
-      assert (state->sort.tag == BTOR_FORMAT_TAG_SORT_bitvec);
+      assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
       uint32_t width = state->sort.bitvec.width;
       if (randomly)
         update = btorsim_bv_new_random (&rng, width);
@@ -563,12 +563,12 @@ simulate_step (long k, int randomize_states_that_are_inputs)
   msg (1, "simulating step %ld", k);
   for (long i = 0; i < num_format_lines; i++)
   {
-    BtorFormatLine *l = btorfmt_get_line_by_id (model, i);
+    Btor2Line *l = btor2parser_get_line_by_id (model, i);
     if (!l) continue;
-    if (l->tag == BTOR_FORMAT_TAG_sort || l->tag == BTOR_FORMAT_TAG_init
-        || l->tag == BTOR_FORMAT_TAG_next || l->tag == BTOR_FORMAT_TAG_bad
-        || l->tag == BTOR_FORMAT_TAG_constraint
-        || l->tag == BTOR_FORMAT_TAG_fair || l->tag == BTOR_FORMAT_TAG_justice)
+    if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
+        || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
+        || l->tag == BTOR2_TAG_constraint
+        || l->tag == BTOR2_TAG_fair || l->tag == BTOR2_TAG_justice)
       continue;
 
     BtorSimBitVector *bv = simulate (i);
@@ -581,9 +581,9 @@ simulate_step (long k, int randomize_states_that_are_inputs)
   }
   for (long i = 0; i < BTORFMT_COUNT_STACK (states); i++)
   {
-    BtorFormatLine *state = BTORFMT_PEEK_STACK (states, i);
+    Btor2Line *state = BTORFMT_PEEK_STACK (states, i);
     assert (0 <= state->id), assert (state->id < num_format_lines);
-    BtorFormatLine *next = nexts[state->id];
+    Btor2Line *next = nexts[state->id];
     BtorSimBitVector *update;
     if (next)
     {
@@ -593,7 +593,7 @@ simulate_step (long k, int randomize_states_that_are_inputs)
     }
     else
     {
-      assert (state->sort.tag == BTOR_FORMAT_TAG_SORT_bitvec);
+      assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
       uint32_t width = state->sort.bitvec.width;
       if (randomize_states_that_are_inputs)
         update = btorsim_bv_new_random (&rng, width);
@@ -608,7 +608,7 @@ simulate_step (long k, int randomize_states_that_are_inputs)
   {
     for (long i = 0; i < BTORFMT_COUNT_STACK (constraints); i++)
     {
-      BtorFormatLine *constraint = BTORFMT_PEEK_STACK (constraints, i);
+      Btor2Line *constraint = BTORFMT_PEEK_STACK (constraints, i);
       BtorSimBitVector *bv       = current_state[constraint->args[0]];
       if (!btorsim_bv_is_zero (bv)) continue;
       msg (1,
@@ -627,7 +627,7 @@ simulate_step (long k, int randomize_states_that_are_inputs)
     {
       long r = BTORFMT_PEEK_STACK (reached_bads, i);
       if (r >= 0) continue;
-      BtorFormatLine *bad  = BTORFMT_PEEK_STACK (bads, i);
+      Btor2Line *bad  = BTORFMT_PEEK_STACK (bads, i);
       BtorSimBitVector *bv = current_state[bad->args[0]];
       if (btorsim_bv_is_zero (bv)) continue;
       long bound = BTORFMT_PEEK_STACK (reached_bads, i);
@@ -650,7 +650,7 @@ transition (long k)
   if (print_trace && print_states) printf ("#%ld\n", k);
   for (long i = 0; i < BTORFMT_COUNT_STACK (states); i++)
   {
-    BtorFormatLine *state = BTORFMT_PEEK_STACK (states, i);
+    Btor2Line *state = BTORFMT_PEEK_STACK (states, i);
     assert (0 <= state->id), assert (state->id < num_format_lines);
     BtorSimBitVector *update = next_state[state->id];
     assert (update);
@@ -916,7 +916,7 @@ parse_state_part (long k)
            constant.start,
            symbol.start,
            k);
-    BtorFormatLine *state = BTORFMT_PEEK_STACK (states, state_pos);
+    Btor2Line *state = BTORFMT_PEEK_STACK (states, state_pos);
     assert (state);
     if (strlen (constant.start) != state->sort.bitvec.width)
       charno = constant_columno,
@@ -928,7 +928,7 @@ parse_state_part (long k)
                    state->id,
                    k);
     BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
-    BtorFormatLine *init  = inits[state->id];
+    Btor2Line *init  = inits[state->id];
     if (init)
     {
       assert (init->nargs == 2);
@@ -974,7 +974,7 @@ parse_input_part (long k)
            constant.start,
            symbol.start,
            k);
-    BtorFormatLine *input = BTORFMT_PEEK_STACK (inputs, input_pos);
+    Btor2Line *input = BTORFMT_PEEK_STACK (inputs, input_pos);
     assert (input);
     if (strlen (constant.start) != input->sort.bitvec.width)
       charno = constant_columno,
@@ -1063,7 +1063,7 @@ parse_sat_witness ()
   {
     long bad_pos      = BTORFMT_PEEK_STACK (claimed_bad_witnesses, i);
     long bound        = BTORFMT_PEEK_STACK (reached_bads, bad_pos);
-    BtorFormatLine *l = BTORFMT_PEEK_STACK (bads, bad_pos);
+    Btor2Line *l = BTORFMT_PEEK_STACK (bads, bad_pos);
     if (bound < 0)
       die ("claimed bad state property 'b%ld' id %ld not reached",
            bad_pos,
@@ -1309,7 +1309,7 @@ main (int argc, char **argv)
   BTORFMT_RELEASE_STACK (justices);
   BTORFMT_RELEASE_STACK (reached_bads);
   BTORFMT_RELEASE_STACK (constraints);
-  btorfmt_delete (model);
+  btor2parser_delete (model);
   BTORFMT_DELETE (inits);
   BTORFMT_DELETE (nexts);
   for (long i = 0; i < num_format_lines; i++)

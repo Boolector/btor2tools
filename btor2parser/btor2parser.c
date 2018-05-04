@@ -1,5 +1,5 @@
 /**
- *  BtorFMT: A tool package for the BTOR format.
+ *  Btor2Tools: A tool package for the BTOR2 format.
  *
  *  Copyright (c) 2012-2018 Armin Biere.
  *  Copyright (c) 2017 Mathias Preiner.
@@ -7,11 +7,11 @@
  *
  *  All rights reserved.
  *
- *  This file is part of the BtorFMT package.
+ *  This file is part of the Btor2Tools package.
  *  See LICENSE.txt for more information on using this software.
  */
 
-#include "btorfmt.h"
+#include "btor2parser.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -21,11 +21,11 @@
 
 #include "util/btorfmtstack.h"
 
-struct BtorFormatReader
+struct Btor2Parser
 {
   char *error;
-  BtorFormatLine **table, *new_line;
-  BtorFormatSort **stable;
+  Btor2Line **table, *new_line;
+  Btor2Sort **stable;
   long sztable, ntable, szstable, nstable, szbuf, nbuf, lineno;
   int saved;
   char *buf;
@@ -33,39 +33,39 @@ struct BtorFormatReader
 };
 
 static void *
-btorfmt_malloc (size_t size)
+btor2parser_malloc (size_t size)
 {
   assert (size);
 
   void *res = malloc (size);
   if (!res)
   {
-    fprintf (stderr, "[btorfmt] memory allocation failed\n");
+    fprintf (stderr, "[btor2parser] memory allocation failed\n");
     abort ();
   }
   return res;
 }
 
 static char *
-btorfmt_strdup (const char *str)
+btor2parser_strdup (const char *str)
 {
   assert (str);
 
-  char *res = btorfmt_malloc (strlen (str) + 1);
+  char *res = btor2parser_malloc (strlen (str) + 1);
   strcpy (res, str);
   return res;
 }
 
-BtorFormatReader *
-btorfmt_new ()
+Btor2Parser *
+btor2parser_new ()
 {
-  BtorFormatReader *res = btorfmt_malloc (sizeof *res);
+  Btor2Parser *res = btor2parser_malloc (sizeof *res);
   memset (res, 0, sizeof *res);
   return res;
 }
 
 static void
-reset_bfr (BtorFormatReader *bfr)
+reset_bfr (Btor2Parser *bfr)
 {
   int i;
   assert (bfr);
@@ -78,7 +78,7 @@ reset_bfr (BtorFormatReader *bfr)
   {
     for (i = 0; i < bfr->ntable; i++)
     {
-      BtorFormatLine *l = bfr->table[i];
+      Btor2Line *l = bfr->table[i];
       if (!l) continue;
       if (l->symbol) free (l->symbol);
       if (l->constant) free (l->constant);
@@ -98,14 +98,14 @@ reset_bfr (BtorFormatReader *bfr)
 }
 
 void
-btorfmt_delete (BtorFormatReader *bfr)
+btor2parser_delete (Btor2Parser *bfr)
 {
   reset_bfr (bfr);
   free (bfr);
 }
 
 static int
-getc_bfr (BtorFormatReader *bfr)
+getc_bfr (Btor2Parser *bfr)
 {
   int ch;
   if ((ch = bfr->saved) == EOF)
@@ -117,7 +117,7 @@ getc_bfr (BtorFormatReader *bfr)
 }
 
 static void
-ungetc_bfr (BtorFormatReader *bfr, int ch)
+ungetc_bfr (Btor2Parser *bfr, int ch)
 {
   assert (bfr->saved == EOF);
   if (ch == EOF) return;
@@ -130,7 +130,7 @@ ungetc_bfr (BtorFormatReader *bfr, int ch)
 }
 
 static int
-perr_bfr (BtorFormatReader *bfr, const char *fmt, ...)
+perr_bfr (Btor2Parser *bfr, const char *fmt, ...)
 {
   assert (!bfr->error);
   char buf[1024];
@@ -141,13 +141,13 @@ perr_bfr (BtorFormatReader *bfr, const char *fmt, ...)
   va_end (ap);
   buf[1023] = '\0';
 
-  bfr->error = btorfmt_malloc (strlen (buf) + 28);
+  bfr->error = btor2parser_malloc (strlen (buf) + 28);
   sprintf (bfr->error, "line %ld: %s", bfr->lineno, buf);
   return 0;
 }
 
 static void
-pushc_bfr (BtorFormatReader *bfr, int ch)
+pushc_bfr (Btor2Parser *bfr, int ch)
 {
   if (bfr->nbuf >= bfr->szbuf)
   {
@@ -158,7 +158,7 @@ pushc_bfr (BtorFormatReader *bfr, int ch)
 }
 
 static void
-pusht_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+pusht_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (bfr->ntable >= bfr->sztable)
   {
@@ -169,7 +169,7 @@ pusht_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_id_bfr (BtorFormatReader *bfr, long *res)
+parse_id_bfr (Btor2Parser *bfr, long *res)
 {
   long id;
   int ch;
@@ -180,7 +180,7 @@ parse_id_bfr (BtorFormatReader *bfr, long *res)
   while (isdigit (ch = getc_bfr (bfr)))
   {
     id = 10 * id + (ch - '0');
-    if (id >= BTOR_FORMAT_MAXID) return perr_bfr (bfr, "id exceeds maximum");
+    if (id >= BTOR2_FORMAT_MAXID) return perr_bfr (bfr, "id exceeds maximum");
   }
   ungetc_bfr (bfr, ch);
   *res = id;
@@ -188,7 +188,7 @@ parse_id_bfr (BtorFormatReader *bfr, long *res)
 }
 
 static int
-parse_signed_id_bfr (BtorFormatReader *bfr, long *res)
+parse_signed_id_bfr (Btor2Parser *bfr, long *res)
 {
   int ch, sign;
   ch = getc_bfr (bfr);
@@ -205,7 +205,7 @@ parse_signed_id_bfr (BtorFormatReader *bfr, long *res)
 }
 
 static int
-parse_pos_number_bfr (BtorFormatReader *bfr, unsigned *res)
+parse_pos_number_bfr (Btor2Parser *bfr, unsigned *res)
 {
   long num;
   int ch;
@@ -228,10 +228,10 @@ parse_pos_number_bfr (BtorFormatReader *bfr, unsigned *res)
   while (isdigit (ch))
   {
     num = 10 * num + (ch - '0');
-    if (num >= BTOR_FORMAT_MAXBITWIDTH)
+    if (num >= BTOR2_FORMAT_MAXBITWIDTH)
       return perr_bfr (bfr,
                        "number exceeds maximum bit width of %ld",
-                       BTOR_FORMAT_MAXBITWIDTH);
+                       BTOR2_FORMAT_MAXBITWIDTH);
     ch = getc_bfr (bfr);
   }
   ungetc_bfr (bfr, ch);
@@ -239,8 +239,8 @@ parse_pos_number_bfr (BtorFormatReader *bfr, unsigned *res)
   return 1;
 }
 
-static BtorFormatLine *
-id2line_bfr (BtorFormatReader *bfr, long id)
+static Btor2Line *
+id2line_bfr (Btor2Parser *bfr, long id)
 {
   long absid = labs (id);
   if (!absid || absid >= bfr->ntable) return 0;
@@ -248,7 +248,7 @@ id2line_bfr (BtorFormatReader *bfr, long id)
 }
 
 static int
-skip_comment (BtorFormatReader *bfr)
+skip_comment (Btor2Parser *bfr)
 {
   int ch;
   while ((ch = getc_bfr (bfr)) != '\n')
@@ -259,46 +259,46 @@ skip_comment (BtorFormatReader *bfr)
 }
 
 static int
-cmp_sort_ids (BtorFormatReader *bfr, long sort_id1, long sort_id2)
+cmp_sort_ids (Btor2Parser *bfr, long sort_id1, long sort_id2)
 {
   (void) bfr;
-  BtorFormatLine *s1, *s2;
+  Btor2Line *s1, *s2;
 
   s1 = id2line_bfr (bfr, sort_id1);
   s2 = id2line_bfr (bfr, sort_id2);
   if (s1->sort.tag != s2->sort.tag) return 1;
-  if (s1->sort.tag == BTOR_FORMAT_TAG_SORT_bitvec)
+  if (s1->sort.tag == BTOR2_TAG_SORT_bitvec)
     return s1->sort.bitvec.width - s2->sort.bitvec.width;
-  assert (s1->sort.tag == BTOR_FORMAT_TAG_SORT_array);
+  assert (s1->sort.tag == BTOR2_TAG_SORT_array);
   if (cmp_sort_ids (bfr, s1->sort.array.index, s2->sort.array.index)) return 1;
   return cmp_sort_ids (bfr, s1->sort.array.element, s2->sort.array.element);
 }
 
 static int
-cmp_sorts (BtorFormatReader *bfr, BtorFormatLine *l1, BtorFormatLine *l2)
+cmp_sorts (Btor2Parser *bfr, Btor2Line *l1, Btor2Line *l2)
 {
   return cmp_sort_ids (bfr, l1->sort.id, l2->sort.id);
 }
 
 static int
-parse_sort_id_bfr (BtorFormatReader *bfr, BtorFormatSort *res)
+parse_sort_id_bfr (Btor2Parser *bfr, Btor2Sort *res)
 {
   long sort_id;
-  BtorFormatLine *s;
+  Btor2Line *s;
   if (!parse_id_bfr (bfr, &sort_id)) return 0;
 
   if (sort_id >= bfr->ntable || id2line_bfr (bfr, sort_id) == 0)
     return perr_bfr (bfr, "undefined sort id");
 
   s = id2line_bfr (bfr, sort_id);
-  if (s->tag != BTOR_FORMAT_TAG_sort)
+  if (s->tag != BTOR2_TAG_sort)
     return perr_bfr (bfr, "id after tag is not a sort id");
   *res = s->sort;
   return 1;
 }
 
 static const char *
-parse_tag (BtorFormatReader *bfr)
+parse_tag (Btor2Parser *bfr)
 {
   int ch;
   bfr->nbuf = 0;
@@ -318,7 +318,7 @@ parse_tag (BtorFormatReader *bfr)
 }
 
 static int
-parse_symbol_bfr (BtorFormatReader *bfr)
+parse_symbol_bfr (Btor2Parser *bfr)
 {
   int ch;
   bfr->nbuf = 0;
@@ -350,7 +350,7 @@ parse_symbol_bfr (BtorFormatReader *bfr)
 }
 
 static int
-parse_opt_symbol_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_opt_symbol_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   int ch;
   if ((ch = getc_bfr (bfr)) == ' ')
@@ -364,7 +364,7 @@ parse_opt_symbol_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
     {
       ungetc_bfr (bfr, ch);
       if (!parse_symbol_bfr (bfr)) return 0;
-      l->symbol = btorfmt_strdup (bfr->buf);
+      l->symbol = btor2parser_strdup (bfr->buf);
     }
   }
   else if (ch != '\n')
@@ -373,23 +373,23 @@ parse_opt_symbol_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
   return 1;
 }
 
-static BtorFormatLine *
-new_line_bfr (BtorFormatReader *bfr,
+static Btor2Line *
+new_line_bfr (Btor2Parser *bfr,
               long id,
               long lineno,
               const char *name,
-              BtorFormatTag tag)
+              Btor2Tag tag)
 {
-  BtorFormatLine *res;
+  Btor2Line *res;
   assert (0 < id);
   assert (bfr->ntable <= id);
-  res = btorfmt_malloc (sizeof *res);
+  res = btor2parser_malloc (sizeof *res);
   memset (res, 0, sizeof (*res));
   res->id     = id;
   res->lineno = lineno;
   res->tag    = tag;
   res->name   = name;
-  res->args   = btorfmt_malloc (sizeof (long) * 3);
+  res->args   = btor2parser_malloc (sizeof (long) * 3);
   memset (res->args, 0, sizeof (long) * 3);
   while (bfr->ntable < id) pusht_bfr (bfr, 0);
   assert (bfr->ntable == id);
@@ -397,17 +397,17 @@ new_line_bfr (BtorFormatReader *bfr,
 }
 
 static int
-check_sort_bitvec (BtorFormatReader *bfr,
-                   BtorFormatLine *l,
-                   BtorFormatLine *args[])
+check_sort_bitvec (Btor2Parser *bfr,
+                   Btor2Line *l,
+                   Btor2Line *args[])
 {
   unsigned i;
   /* check if bit-vector operators have bit-vector operands */
-  if (l->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec)
+  if (l->sort.tag != BTOR2_TAG_SORT_bitvec)
     return perr_bfr (bfr, "expected bitvec sort for %s", l->name);
   for (i = 0; i < l->nargs; i++)
   {
-    if (args[i]->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec)
+    if (args[i]->sort.tag != BTOR2_TAG_SORT_bitvec)
       return perr_bfr (bfr,
                        "expected bitvec sort for %s argument of %s",
                        i == 0 ? "first" : (i == 1 ? "second" : "third"),
@@ -417,23 +417,23 @@ check_sort_bitvec (BtorFormatReader *bfr,
 }
 
 static int
-is_constant_bfr (BtorFormatReader *bfr, long id)
+is_constant_bfr (Btor2Parser *bfr, long id)
 {
-  BtorFormatLine *l = id2line_bfr (bfr, id);
+  Btor2Line *l = id2line_bfr (bfr, id);
   assert (l);
-  BtorFormatTag tag = l->tag;
-  return tag == BTOR_FORMAT_TAG_const || tag == BTOR_FORMAT_TAG_constd
-         || tag == BTOR_FORMAT_TAG_consth || tag == BTOR_FORMAT_TAG_one
-         || tag == BTOR_FORMAT_TAG_ones || tag == BTOR_FORMAT_TAG_zero;
+  Btor2Tag tag = l->tag;
+  return tag == BTOR2_TAG_const || tag == BTOR2_TAG_constd
+         || tag == BTOR2_TAG_consth || tag == BTOR2_TAG_one
+         || tag == BTOR2_TAG_ones || tag == BTOR2_TAG_zero;
 }
 
 static int
-check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  BtorFormatLine *arg;
-  BtorFormatLine *args[3];
+  Btor2Line *arg;
+  Btor2Line *args[3];
   unsigned i;
-  if (l->tag != BTOR_FORMAT_TAG_justice)
+  if (l->tag != BTOR2_TAG_justice)
   {
     for (i = 0; i < l->nargs; i++) args[i] = id2line_bfr (bfr, l->args[i]);
   }
@@ -441,11 +441,11 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
   switch (l->tag)
   {
     /* n -> n */
-    case BTOR_FORMAT_TAG_dec:
-    case BTOR_FORMAT_TAG_inc:
-    case BTOR_FORMAT_TAG_neg:
-    case BTOR_FORMAT_TAG_not:
-    case BTOR_FORMAT_TAG_output:
+    case BTOR2_TAG_dec:
+    case BTOR2_TAG_inc:
+    case BTOR2_TAG_neg:
+    case BTOR2_TAG_not:
+    case BTOR2_TAG_output:
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       if (l->sort.bitvec.width != args[0]->sort.bitvec.width)
@@ -457,9 +457,9 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* n -> 1 */
-    case BTOR_FORMAT_TAG_redand:
-    case BTOR_FORMAT_TAG_redor:
-    case BTOR_FORMAT_TAG_redxor:
+    case BTOR2_TAG_redand:
+    case BTOR2_TAG_redor:
+    case BTOR2_TAG_redxor:
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       if (l->sort.bitvec.width != 1)
@@ -471,25 +471,25 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* n x n -> n */
-    case BTOR_FORMAT_TAG_add:
-    case BTOR_FORMAT_TAG_and:
-    case BTOR_FORMAT_TAG_mul:
-    case BTOR_FORMAT_TAG_nand:
-    case BTOR_FORMAT_TAG_nor:
-    case BTOR_FORMAT_TAG_or:
-    case BTOR_FORMAT_TAG_rol:
-    case BTOR_FORMAT_TAG_ror:
-    case BTOR_FORMAT_TAG_sdiv:
-    case BTOR_FORMAT_TAG_sll:
-    case BTOR_FORMAT_TAG_smod:
-    case BTOR_FORMAT_TAG_sra:
-    case BTOR_FORMAT_TAG_srem:
-    case BTOR_FORMAT_TAG_srl:
-    case BTOR_FORMAT_TAG_sub:
-    case BTOR_FORMAT_TAG_udiv:
-    case BTOR_FORMAT_TAG_urem:
-    case BTOR_FORMAT_TAG_xnor:
-    case BTOR_FORMAT_TAG_xor:
+    case BTOR2_TAG_add:
+    case BTOR2_TAG_and:
+    case BTOR2_TAG_mul:
+    case BTOR2_TAG_nand:
+    case BTOR2_TAG_nor:
+    case BTOR2_TAG_or:
+    case BTOR2_TAG_rol:
+    case BTOR2_TAG_ror:
+    case BTOR2_TAG_sdiv:
+    case BTOR2_TAG_sll:
+    case BTOR2_TAG_smod:
+    case BTOR2_TAG_sra:
+    case BTOR2_TAG_srem:
+    case BTOR2_TAG_srl:
+    case BTOR2_TAG_sub:
+    case BTOR2_TAG_udiv:
+    case BTOR2_TAG_urem:
+    case BTOR2_TAG_xnor:
+    case BTOR2_TAG_xor:
       assert (l->nargs == 2);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       if (l->sort.bitvec.width != args[0]->sort.bitvec.width)
@@ -506,14 +506,14 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                          args[1]->sort.bitvec.width);
       break;
 
-    case BTOR_FORMAT_TAG_init:
-      if (l->sort.tag == BTOR_FORMAT_TAG_SORT_array)
+    case BTOR2_TAG_init:
+      if (l->sort.tag == BTOR2_TAG_SORT_array)
       {
         if (cmp_sorts (bfr, l, args[0]))
           return perr_bfr (bfr, "sort of first argument does not match");
 
         // special case for constant initialization for arrays
-        if (args[1]->sort.tag == BTOR_FORMAT_TAG_SORT_bitvec)
+        if (args[1]->sort.tag == BTOR2_TAG_SORT_bitvec)
         {
           if (!is_constant_bfr (bfr, args[1]->id))
             return perr_bfr (bfr,
@@ -527,7 +527,7 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
         break;
       }
       // else fall through
-    case BTOR_FORMAT_TAG_next:
+    case BTOR2_TAG_next:
       assert (l->nargs == 2);
       if (cmp_sorts (bfr, l, args[0]))
         return perr_bfr (bfr, "sort of first argument does not match");
@@ -536,21 +536,21 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* n x n -> 1 */
-    case BTOR_FORMAT_TAG_uaddo:
-    case BTOR_FORMAT_TAG_ugt:
-    case BTOR_FORMAT_TAG_ugte:
-    case BTOR_FORMAT_TAG_ult:
-    case BTOR_FORMAT_TAG_ulte:
-    case BTOR_FORMAT_TAG_umulo:
-    case BTOR_FORMAT_TAG_usubo:
-    case BTOR_FORMAT_TAG_saddo:
-    case BTOR_FORMAT_TAG_sdivo:
-    case BTOR_FORMAT_TAG_sgt:
-    case BTOR_FORMAT_TAG_sgte:
-    case BTOR_FORMAT_TAG_slt:
-    case BTOR_FORMAT_TAG_slte:
-    case BTOR_FORMAT_TAG_smulo:
-    case BTOR_FORMAT_TAG_ssubo:
+    case BTOR2_TAG_uaddo:
+    case BTOR2_TAG_ugt:
+    case BTOR2_TAG_ugte:
+    case BTOR2_TAG_ult:
+    case BTOR2_TAG_ulte:
+    case BTOR2_TAG_umulo:
+    case BTOR2_TAG_usubo:
+    case BTOR2_TAG_saddo:
+    case BTOR2_TAG_sdivo:
+    case BTOR2_TAG_sgt:
+    case BTOR2_TAG_sgte:
+    case BTOR2_TAG_slt:
+    case BTOR2_TAG_slte:
+    case BTOR2_TAG_smulo:
+    case BTOR2_TAG_ssubo:
       assert (l->nargs == 2);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       if (l->sort.bitvec.width != 1)
@@ -565,8 +565,8 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                          "argument do not match");
       break;
 
-    case BTOR_FORMAT_TAG_eq:
-    case BTOR_FORMAT_TAG_ne:
+    case BTOR2_TAG_eq:
+    case BTOR2_TAG_ne:
       assert (l->nargs == 2);
       if (l->sort.bitvec.width != 1)
         return perr_bfr (bfr,
@@ -580,7 +580,7 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* n x m -> n + m */
-    case BTOR_FORMAT_TAG_concat:
+    case BTOR2_TAG_concat:
       assert (l->nargs == 2);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       if (l->sort.bitvec.width
@@ -594,7 +594,7 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* [u:l] -> u - l + 1 */
-    case BTOR_FORMAT_TAG_slice:
+    case BTOR2_TAG_slice:
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       /* NOTE: this cast is safe since l->args[1] and l->args[2] contains
@@ -610,11 +610,11 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* 1 x 1 -> 1 */
-    case BTOR_FORMAT_TAG_iff:
-    case BTOR_FORMAT_TAG_implies:
+    case BTOR2_TAG_iff:
+    case BTOR2_TAG_implies:
       assert (l->nargs == 2);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
-      if (l->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec
+      if (l->sort.tag != BTOR2_TAG_SORT_bitvec
           || l->sort.bitvec.width != 1)
         return perr_bfr (bfr, "expected bitvec of size 1");
       if (cmp_sorts (bfr, args[0], l))
@@ -628,11 +628,11 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* 1 */
-    case BTOR_FORMAT_TAG_bad:
-    case BTOR_FORMAT_TAG_constraint:
-    case BTOR_FORMAT_TAG_fair:
+    case BTOR2_TAG_bad:
+    case BTOR2_TAG_constraint:
+    case BTOR2_TAG_fair:
       assert (l->nargs == 1);
-      if (args[0]->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec)
+      if (args[0]->sort.tag != BTOR2_TAG_SORT_bitvec)
         return perr_bfr (bfr, "expected bitvec of size 1 for %s", l->name);
       if (args[0]->sort.bitvec.width != 1)
         return perr_bfr (bfr,
@@ -642,9 +642,9 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                          args[0]->sort.bitvec.width);
       break;
 
-    case BTOR_FORMAT_TAG_ite:
+    case BTOR2_TAG_ite:
       assert (l->nargs == 3);
-      if (args[0]->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec)
+      if (args[0]->sort.tag != BTOR2_TAG_SORT_bitvec)
         return perr_bfr (bfr,
                          "expected bitvec of size 1 for ",
                          "first argument of %s",
@@ -661,11 +661,11 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                          "argument do not match");
       break;
 
-    case BTOR_FORMAT_TAG_justice:
+    case BTOR2_TAG_justice:
       for (i = 0; i < l->nargs; i++)
       {
         arg = id2line_bfr (bfr, l->args[i]);
-        if (arg->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec)
+        if (arg->sort.tag != BTOR2_TAG_SORT_bitvec)
           return perr_bfr (bfr, "expected bitvec of size 1 for argument %u", i);
         if (arg->sort.bitvec.width != 1)
           return perr_bfr (bfr,
@@ -676,8 +676,8 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       }
       break;
 
-    case BTOR_FORMAT_TAG_sext:
-    case BTOR_FORMAT_TAG_uext:
+    case BTOR2_TAG_sext:
+    case BTOR2_TAG_uext:
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       /* NOTE: this cast is safe since l->args[1] contains the extension
@@ -691,9 +691,9 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                          ext);
       break;
 
-    case BTOR_FORMAT_TAG_read:
+    case BTOR2_TAG_read:
       assert (l->nargs == 2);
-      if (args[0]->sort.tag != BTOR_FORMAT_TAG_SORT_array)
+      if (args[0]->sort.tag != BTOR2_TAG_SORT_array)
         return perr_bfr (
             bfr, "expected array sort for first argument of %s", l->name);
       if (cmp_sort_ids (bfr, l->sort.id, args[0]->sort.array.element))
@@ -707,11 +707,11 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                          "sort of first argument");
       break;
 
-    case BTOR_FORMAT_TAG_write:
+    case BTOR2_TAG_write:
       assert (l->nargs == 3);
-      if (l->sort.tag != BTOR_FORMAT_TAG_SORT_array)
+      if (l->sort.tag != BTOR2_TAG_SORT_array)
         return perr_bfr (bfr, "expected array sort for %s", l->name);
-      if (args[0]->sort.tag != BTOR_FORMAT_TAG_SORT_array)
+      if (args[0]->sort.tag != BTOR2_TAG_SORT_array)
         return perr_bfr (
             bfr, "expected array sort for first argument of %s", l->name);
       if (cmp_sort_ids (bfr, args[1]->sort.id, args[0]->sort.array.index))
@@ -728,15 +728,15 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
       break;
 
     /* no sort checking */
-    case BTOR_FORMAT_TAG_const:
-    case BTOR_FORMAT_TAG_constd:
-    case BTOR_FORMAT_TAG_consth:
-    case BTOR_FORMAT_TAG_input:
-    case BTOR_FORMAT_TAG_one:
-    case BTOR_FORMAT_TAG_ones:
-    case BTOR_FORMAT_TAG_sort:
-    case BTOR_FORMAT_TAG_state:
-    case BTOR_FORMAT_TAG_zero: break;
+    case BTOR2_TAG_const:
+    case BTOR2_TAG_constd:
+    case BTOR2_TAG_consth:
+    case BTOR2_TAG_input:
+    case BTOR2_TAG_one:
+    case BTOR2_TAG_ones:
+    case BTOR2_TAG_sort:
+    case BTOR2_TAG_state:
+    case BTOR2_TAG_zero: break;
 
     default:
       assert (0);
@@ -746,9 +746,9 @@ check_sorts_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static long
-parse_arg_bfr (BtorFormatReader *bfr)
+parse_arg_bfr (Btor2Parser *bfr)
 {
-  BtorFormatLine *l;
+  Btor2Line *l;
   long res, absres;
   if (!parse_signed_id_bfr (bfr, &res)) return 0;
   absres = labs (res);
@@ -756,10 +756,10 @@ parse_arg_bfr (BtorFormatReader *bfr)
     return perr_bfr (bfr, "argument id too large (undefined)");
   l = bfr->table[absres];
   if (!l) return perr_bfr (bfr, "undefined argument id");
-  if (l->tag == BTOR_FORMAT_TAG_sort || l->tag == BTOR_FORMAT_TAG_init
-      || l->tag == BTOR_FORMAT_TAG_next || l->tag == BTOR_FORMAT_TAG_bad
-      || l->tag == BTOR_FORMAT_TAG_constraint || l->tag == BTOR_FORMAT_TAG_fair
-      || l->tag == BTOR_FORMAT_TAG_justice)
+  if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
+      || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
+      || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
+      || l->tag == BTOR2_TAG_justice)
   {
     return perr_bfr (bfr, "'%s' cannot be used as argument", l->name);
   }
@@ -768,15 +768,15 @@ parse_arg_bfr (BtorFormatReader *bfr)
 }
 
 static int
-parse_sort_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_sort_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   const char *tag;
-  BtorFormatSort tmp, s;
+  Btor2Sort tmp, s;
   tag = parse_tag (bfr);
   if (!tag) return 0;
   if (!strcmp (tag, "bitvec"))
   {
-    tmp.tag  = BTOR_FORMAT_TAG_SORT_bitvec;
+    tmp.tag  = BTOR2_TAG_SORT_bitvec;
     tmp.name = "bitvec";
     if (!parse_pos_number_bfr (bfr, &tmp.bitvec.width)) return 0;
     if (tmp.bitvec.width == 0)
@@ -784,7 +784,7 @@ parse_sort_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
   }
   else if (!strcmp (tag, "array"))
   {
-    tmp.tag  = BTOR_FORMAT_TAG_SORT_array;
+    tmp.tag  = BTOR2_TAG_SORT_array;
     tmp.name = "array";
     if (!parse_sort_id_bfr (bfr, &s)) return 0;
     if (getc_bfr (bfr) != ' ') return perr_bfr (bfr, "expected space");
@@ -802,7 +802,7 @@ parse_sort_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_args (BtorFormatReader *bfr, BtorFormatLine *l, unsigned nargs)
+parse_args (Btor2Parser *bfr, Btor2Line *l, unsigned nargs)
 {
   unsigned i = 0;
   if (getc_bfr (bfr) != ' ')
@@ -819,7 +819,7 @@ parse_args (BtorFormatReader *bfr, BtorFormatLine *l, unsigned nargs)
 }
 
 static int
-parse_unary_op_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_unary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
   if (!parse_args (bfr, l, 1)) return 0;
@@ -827,7 +827,7 @@ parse_unary_op_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_ext_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_ext_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   unsigned ext;
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
@@ -840,7 +840,7 @@ parse_ext_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_slice_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_slice_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   unsigned lower;
   if (!parse_ext_bfr (bfr, l)) return 0;
@@ -854,7 +854,7 @@ parse_slice_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_binary_op_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_binary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
   if (!parse_args (bfr, l, 2)) return 0;
@@ -862,7 +862,7 @@ parse_binary_op_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_ternary_op_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_ternary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
   if (!parse_args (bfr, l, 3)) return 0;
@@ -960,17 +960,17 @@ mult_unbounded_bin_str (const char *a, const char *b)
   const char *p;
 
   a = strip_zeroes (a);
-  if (!*a) return btorfmt_strdup ("");
-  if (a[0] == '1' && !a[1]) return btorfmt_strdup (b);
+  if (!*a) return btor2parser_strdup ("");
+  if (a[0] == '1' && !a[1]) return btor2parser_strdup (b);
 
   b = strip_zeroes (b);
-  if (!*b) return btorfmt_strdup ("");
-  if (b[0] == '1' && !b[1]) return btorfmt_strdup (a);
+  if (!*b) return btor2parser_strdup ("");
+  if (b[0] == '1' && !b[1]) return btor2parser_strdup (a);
 
   alen      = strlen (a);
   blen      = strlen (b);
   rlen      = alen + blen;
-  res       = btorfmt_malloc (rlen + 1);
+  res       = btor2parser_malloc (rlen + 1);
   res[rlen] = 0;
 
   for (r = res; r < res + blen; r++) *r = '0';
@@ -1020,15 +1020,15 @@ add_unbounded_bin_str (const char *a, const char *b)
   a = strip_zeroes (a);
   b = strip_zeroes (b);
 
-  if (!*a) return btorfmt_strdup (b);
-  if (!*b) return btorfmt_strdup (a);
+  if (!*a) return btor2parser_strdup (b);
+  if (!*b) return btor2parser_strdup (a);
 
   alen = strlen (a);
   blen = strlen (b);
   rlen = (alen < blen) ? blen : alen;
   rlen++;
 
-  res = btorfmt_malloc (rlen + 1);
+  res = btor2parser_malloc (rlen + 1);
 
   p = a + alen;
   q = b + blen;
@@ -1050,7 +1050,7 @@ add_unbounded_bin_str (const char *a, const char *b)
   p = strip_zeroes (res);
   if ((p != res))
   {
-    tmp = btorfmt_strdup (p);
+    tmp = btor2parser_strdup (p);
     if (!tmp)
     {
       free (res);
@@ -1071,7 +1071,7 @@ dec_to_bin_str (const char *str, unsigned len)
   const char *end, *p;
   char *res, *tmp;
 
-  res = btorfmt_strdup ("");
+  res = btor2parser_strdup ("");
   if (!res) return 0;
 
   end = str + len;
@@ -1099,7 +1099,7 @@ dec_to_bin_str (const char *str, unsigned len)
   assert (strip_zeroes (res) == res);
   if (strlen (res)) return res;
   free (res);
-  return btorfmt_strdup ("0");
+  return btor2parser_strdup ("0");
 }
 
 int
@@ -1129,15 +1129,15 @@ check_constd (const char *str, unsigned width)
 }
 
 static int
-parse_constant_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_constant_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
 
-  if (l->sort.tag != BTOR_FORMAT_TAG_SORT_bitvec)
+  if (l->sort.tag != BTOR2_TAG_SORT_bitvec)
     return perr_bfr (bfr, "expected bitvec sort for %s", l->name);
 
-  if (l->tag == BTOR_FORMAT_TAG_one || l->tag == BTOR_FORMAT_TAG_ones
-      || l->tag == BTOR_FORMAT_TAG_zero)
+  if (l->tag == BTOR2_TAG_one || l->tag == BTOR2_TAG_ones
+      || l->tag == BTOR2_TAG_zero)
   {
     return 1;
   }
@@ -1146,18 +1146,18 @@ parse_constant_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
   if (ch != ' ') return perr_bfr (bfr, "expected space after sort id");
 
   bfr->nbuf = 0;
-  if (l->tag == BTOR_FORMAT_TAG_const)
+  if (l->tag == BTOR2_TAG_const)
   {
     while ('0' == (ch = getc_bfr (bfr)) || ch == '1') pushc_bfr (bfr, ch);
   }
-  else if (l->tag == BTOR_FORMAT_TAG_constd)
+  else if (l->tag == BTOR2_TAG_constd)
   {
     /* allow negative numbers */
     if ((ch = getc_bfr (bfr)) && (ch == '-' || isdigit (ch)))
       pushc_bfr (bfr, ch);
     while (isdigit ((ch = getc_bfr (bfr)))) pushc_bfr (bfr, ch);
   }
-  else if (l->tag == BTOR_FORMAT_TAG_consth)
+  else if (l->tag == BTOR2_TAG_consth)
   {
     while (isxdigit ((ch = getc_bfr (bfr)))) pushc_bfr (bfr, ch);
   }
@@ -1174,7 +1174,7 @@ parse_constant_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
   ungetc_bfr (bfr, '\n');
   pushc_bfr (bfr, 0);
 
-  if (l->tag == BTOR_FORMAT_TAG_const
+  if (l->tag == BTOR2_TAG_const
       && strlen (bfr->buf) != l->sort.bitvec.width)
   {
     return perr_bfr (bfr,
@@ -1182,7 +1182,7 @@ parse_constant_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                      bfr->buf,
                      l->sort.bitvec.width);
   }
-  else if (l->tag == BTOR_FORMAT_TAG_constd
+  else if (l->tag == BTOR2_TAG_constd
            && !check_constd (bfr->buf, l->sort.bitvec.width))
   {
     return perr_bfr (bfr,
@@ -1190,7 +1190,7 @@ parse_constant_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                      bfr->buf,
                      l->sort.bitvec.width);
   }
-  else if (l->tag == BTOR_FORMAT_TAG_consth
+  else if (l->tag == BTOR2_TAG_consth
            && !check_consth (bfr->buf, l->sort.bitvec.width))
   {
     return perr_bfr (bfr,
@@ -1198,20 +1198,20 @@ parse_constant_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
                      bfr->buf,
                      l->sort.bitvec.width);
   }
-  l->constant = btorfmt_strdup (bfr->buf);
+  l->constant = btor2parser_strdup (bfr->buf);
   return 1;
 }
 
 static int
-parse_input_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_input_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   return parse_sort_id_bfr (bfr, &l->sort);
 }
 
-BTORFMT_DECLARE_STACK (BtorFmtLong, long);
+BTORFMT_DECLARE_STACK (Btor2Long, long);
 
 static int
-check_state_init (BtorFormatReader *bfr, long state_id, long init_id)
+check_state_init (Btor2Parser *bfr, long state_id, long init_id)
 {
   assert (state_id > init_id);
   (void) state_id;
@@ -1219,15 +1219,15 @@ check_state_init (BtorFormatReader *bfr, long state_id, long init_id)
   int res = 1;
   long id;
   unsigned i;
-  BtorFormatLine *line;
-  BtorFmtLongStack stack;
+  Btor2Line *line;
+  Btor2LongStack stack;
   char *cache;
 
   line = id2line_bfr (bfr, init_id);
 
   // 'init_id' is the highest id we will see when traversing down
   size_t size = (init_id + 1) * sizeof (char);
-  cache       = btorfmt_malloc (size);
+  cache       = btor2parser_malloc (size);
   memset (cache, 0, size);
 
   BTORFMT_INIT_STACK (stack);
@@ -1245,7 +1245,7 @@ check_state_init (BtorFormatReader *bfr, long state_id, long init_id)
     cache[id] = 1;
     line      = id2line_bfr (bfr, id);
 
-    if (line->tag == BTOR_FORMAT_TAG_input)
+    if (line->tag == BTOR2_TAG_input)
     {
       res = perr_bfr (bfr,
                       "inputs are not allowed in initialization expressions, "
@@ -1261,14 +1261,14 @@ check_state_init (BtorFormatReader *bfr, long state_id, long init_id)
 }
 
 static int
-parse_init_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_init_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  BtorFormatLine *state;
+  Btor2Line *state;
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
   if (!parse_args (bfr, l, 2)) return 0;
   if (l->args[0] < 0) return perr_bfr (bfr, "invalid negated first argument");
   state = id2line_bfr (bfr, l->args[0]);
-  if (state->tag != BTOR_FORMAT_TAG_state)
+  if (state->tag != BTOR2_TAG_state)
     return perr_bfr (bfr, "expected state as first argument");
   if (l->args[0] < abs (l->args[1]))
     return perr_bfr (bfr, "state id must be greater than id of second operand");
@@ -1280,14 +1280,14 @@ parse_init_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_next_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_next_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  BtorFormatLine *state;
+  Btor2Line *state;
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
   if (!parse_args (bfr, l, 2)) return 0;
   if (l->args[0] < 0) return perr_bfr (bfr, "invalid negated first argument");
   state = id2line_bfr (bfr, l->args[0]);
-  if (state->tag != BTOR_FORMAT_TAG_state)
+  if (state->tag != BTOR2_TAG_state)
     return perr_bfr (bfr, "expected state as first argument");
   if (state->next)
     return perr_bfr (bfr, "next for state %ld set twice", state->id);
@@ -1296,19 +1296,19 @@ parse_next_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 }
 
 static int
-parse_constraint_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_constraint_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   /* contraint, bad, justice, fairness do not have a sort id after the tag */
   if (!(l->args[0] = parse_arg_bfr (bfr))) return 0;
-  BtorFormatLine *arg = id2line_bfr (bfr, l->args[0]);
-  if (arg->tag == BTOR_FORMAT_TAG_sort)
+  Btor2Line *arg = id2line_bfr (bfr, l->args[0]);
+  if (arg->tag == BTOR2_TAG_sort)
     return perr_bfr (bfr, "unexpected sort id after tag");
   l->nargs = 1;
   return 1;
 }
 
 static int
-parse_justice_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
+parse_justice_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   unsigned nargs;
   if (!parse_pos_number_bfr (bfr, &nargs)) return 0;
@@ -1323,8 +1323,8 @@ parse_justice_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
   {                                                                            \
     if (!strcmp (tag, #NAME))                                                  \
     {                                                                          \
-      BtorFormatLine *LINE =                                                   \
-          new_line_bfr (bfr, id, lineno, #NAME, BTOR_FORMAT_TAG_##NAME);       \
+      Btor2Line *LINE =                                                   \
+          new_line_bfr (bfr, id, lineno, #NAME, BTOR2_TAG_##NAME);       \
       if (parse_##GENERIC##_bfr (bfr, LINE))                                   \
       {                                                                        \
         pusht_bfr (bfr, LINE);                                                 \
@@ -1347,7 +1347,7 @@ parse_justice_bfr (BtorFormatReader *bfr, BtorFormatLine *l)
 // 2) allow comments at the end of the line
 
 static int
-readl_bfr (BtorFormatReader *bfr)
+readl_bfr (Btor2Parser *bfr)
 {
   const char *tag;
   long lineno;
@@ -1471,7 +1471,7 @@ START:
 }
 
 int
-btorfmt_read_lines (BtorFormatReader *bfr, FILE *file)
+btor2parser_read_lines (Btor2Parser *bfr, FILE *file)
 {
   reset_bfr (bfr);
   bfr->lineno = 1;
@@ -1483,13 +1483,13 @@ btorfmt_read_lines (BtorFormatReader *bfr, FILE *file)
 }
 
 const char *
-btorfmt_error (BtorFormatReader *bfr)
+btor2parser_error (Btor2Parser *bfr)
 {
   return bfr->error;
 }
 
 static long
-find_non_zero_line_bfr (BtorFormatReader *bfr, long start)
+find_non_zero_line_bfr (Btor2Parser *bfr, long start)
 {
   long res;
   for (res = start; res < bfr->ntable; res++)
@@ -1497,10 +1497,10 @@ find_non_zero_line_bfr (BtorFormatReader *bfr, long start)
   return 0;
 }
 
-BtorFormatLineIterator
-btorfmt_iter_init (BtorFormatReader *bfr)
+Btor2LineIterator
+btor2parser_iter_init (Btor2Parser *bfr)
 {
-  BtorFormatLineIterator res;
+  Btor2LineIterator res;
   res.reader = bfr;
   if (bfr->error)
     res.next = 0;
@@ -1509,10 +1509,10 @@ btorfmt_iter_init (BtorFormatReader *bfr)
   return res;
 }
 
-BtorFormatLine *
-btorfmt_iter_next (BtorFormatLineIterator *it)
+Btor2Line *
+btor2parser_iter_next (Btor2LineIterator *it)
 {
-  BtorFormatLine *res;
+  Btor2Line *res;
   if (!it->next) return 0;
   assert (0 < it->next);
   assert (it->next < it->reader->ntable);
@@ -1521,14 +1521,14 @@ btorfmt_iter_next (BtorFormatLineIterator *it)
   return res;
 }
 
-BtorFormatLine *
-btorfmt_get_line_by_id (BtorFormatReader *bfr, long id)
+Btor2Line *
+btor2parser_get_line_by_id (Btor2Parser *bfr, long id)
 {
   return id2line_bfr (bfr, id);
 }
 
 long
-btorfmt_max_id (BtorFormatReader *bfr)
+btor2parser_max_id (Btor2Parser *bfr)
 {
   return bfr->ntable - 1;
 }

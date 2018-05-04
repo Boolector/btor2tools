@@ -1,5 +1,5 @@
 /**
- *  BtorFMT: A tool package for the BTOR format.
+ *  Btor2Tools: A tool package for the BTOR format.
  *
  *  Copyright (c) 2012-2015 Armin Biere.
  *  Copyright (c) 2017 Mathias Preiner.
@@ -7,11 +7,11 @@
  *
  *  All rights reserved.
  *
- *  This file is part of the BtorFMT package.
+ *  This file is part of the Btor2Tools package.
  *  See LICENSE.txt for more information on using this software.
  */
 
-#include "btorfmt.h"
+#include "btor2parser/btor2parser.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -25,9 +25,9 @@ static const char* input_name;
 int
 main (int argc, char** argv)
 {
-  BtorFormatReader* reader;
-  BtorFormatLineIterator it;
-  BtorFormatLine* l;
+  Btor2Parser* reader;
+  Btor2LineIterator it;
+  Btor2Line* l;
   int i, verbosity = 0;
   const char* err;
   for (i = 1; i < argc; i++)
@@ -78,13 +78,13 @@ main (int argc, char** argv)
              input_name);
     fflush (stderr);
   }
-  reader = btorfmt_new ();
-  if (!btorfmt_read_lines (reader, input_file))
+  reader = btor2parser_new ();
+  if (!btor2parser_read_lines (reader, input_file))
   {
-    err = btorfmt_error (reader);
+    err = btor2parser_error (reader);
     assert (err);
     fprintf (stderr, "*** catbtor: parse error in '%s' %s\n", input_name, err);
-    btorfmt_delete (reader);
+    btor2parser_delete (reader);
     if (close_input) fclose (input_file);
     exit (1);
   }
@@ -99,19 +99,19 @@ main (int argc, char** argv)
     fprintf (stderr, "; [catbor] starting to dump BTOR model to '<stdout>'\n");
     fflush (stderr);
   }
-  it = btorfmt_iter_init (reader);
-  while ((l = btorfmt_iter_next (&it)))
+  it = btor2parser_iter_init (reader);
+  while ((l = btor2parser_iter_next (&it)))
   {
     printf ("%ld %s", l->id, l->name);
-    if (l->tag == BTOR_FORMAT_TAG_sort)
+    if (l->tag == BTOR2_TAG_sort)
     {
       printf (" %s", l->sort.name);
       switch (l->sort.tag)
       {
-        case BTOR_FORMAT_TAG_SORT_bitvec:
+        case BTOR2_TAG_SORT_bitvec:
           printf (" %u", l->sort.bitvec.width);
           break;
-        case BTOR_FORMAT_TAG_SORT_array:
+        case BTOR2_TAG_SORT_array:
           printf (" %ld %ld", l->sort.array.index, l->sort.array.element);
           break;
         default:
@@ -123,15 +123,15 @@ main (int argc, char** argv)
     else if (l->sort.id)
       printf (" %ld", l->sort.id);
     for (i = 0; i < l->nargs; i++) printf (" %ld", l->args[i]);
-    if (l->tag == BTOR_FORMAT_TAG_slice)
+    if (l->tag == BTOR2_TAG_slice)
       printf (" %ld %ld", l->args[1], l->args[2]);
-    if (l->tag == BTOR_FORMAT_TAG_sext || l->tag == BTOR_FORMAT_TAG_uext)
+    if (l->tag == BTOR2_TAG_sext || l->tag == BTOR2_TAG_uext)
       printf (" %ld", l->args[1]);
     if (l->constant) printf (" %s", l->constant);
     if (l->symbol) printf (" %s", l->symbol);
     fputc ('\n', stdout);
   }
-  btorfmt_delete (reader);
+  btor2parser_delete (reader);
   if (verbosity)
   {
     fprintf (stderr, "; [catbor] finished dumping BTOR model to '<stdout>'\n");
