@@ -7,7 +7,7 @@ do
     -h) echo "usage: configure.sh [-h][-g][-c]" 1>&2; exit 1;;
     -g) debug=yes;;
     -c) coverage=yes;;
-    *) echo "*** configure.sh: invalid option '$1'" 1>&2 exit 1;;
+    *) echo "*** configure.sh: invalid option '$1'" 1>&2; exit 1;;
   esac
   shift
 done
