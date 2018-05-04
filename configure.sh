@@ -23,10 +23,12 @@ echo "$CC $CFLAGS"
 rm -f makefile
 BINDIR="bin"
 BUILDIR="build"
+SRCDIR="src"
 sed \
   -e "s,@CC@,$CC," \
   -e "s,@CFLAGS@,$CFLAGS," \
   -e "s,@BUILDIR@,$BUILDIR," \
   -e "s,@BINDIR@,$BINDIR," \
+  -e "s,@SRCDIR@,$SRCDIR," \
   makefile.in > makefile
 echo "makefile generated"
