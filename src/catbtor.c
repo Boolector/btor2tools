@@ -108,9 +108,7 @@ main (int argc, char** argv)
       printf (" %s", l->sort.name);
       switch (l->sort.tag)
       {
-        case BTOR2_TAG_SORT_bitvec:
-          printf (" %u", l->sort.bitvec.width);
-          break;
+        case BTOR2_TAG_SORT_bitvec: printf (" %u", l->sort.bitvec.width); break;
         case BTOR2_TAG_SORT_array:
           printf (" %ld %ld", l->sort.array.index, l->sort.array.element);
           break;
@@ -123,8 +121,7 @@ main (int argc, char** argv)
     else if (l->sort.id)
       printf (" %ld", l->sort.id);
     for (i = 0; i < l->nargs; i++) printf (" %ld", l->args[i]);
-    if (l->tag == BTOR2_TAG_slice)
-      printf (" %ld %ld", l->args[1], l->args[2]);
+    if (l->tag == BTOR2_TAG_slice) printf (" %ld %ld", l->args[1], l->args[2]);
     if (l->tag == BTOR2_TAG_sext || l->tag == BTOR2_TAG_uext)
       printf (" %ld", l->args[1]);
     if (l->constant) printf (" %s", l->constant);

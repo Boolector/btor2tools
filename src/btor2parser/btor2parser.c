@@ -374,11 +374,8 @@ parse_opt_symbol_bfr (Btor2Parser *bfr, Btor2Line *l)
 }
 
 static Btor2Line *
-new_line_bfr (Btor2Parser *bfr,
-              long id,
-              long lineno,
-              const char *name,
-              Btor2Tag tag)
+new_line_bfr (
+    Btor2Parser *bfr, long id, long lineno, const char *name, Btor2Tag tag)
 {
   Btor2Line *res;
   assert (0 < id);
@@ -397,9 +394,7 @@ new_line_bfr (Btor2Parser *bfr,
 }
 
 static int
-check_sort_bitvec (Btor2Parser *bfr,
-                   Btor2Line *l,
-                   Btor2Line *args[])
+check_sort_bitvec (Btor2Parser *bfr, Btor2Line *l, Btor2Line *args[])
 {
   unsigned i;
   /* check if bit-vector operators have bit-vector operands */
@@ -614,8 +609,7 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
     case BTOR2_TAG_implies:
       assert (l->nargs == 2);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
-      if (l->sort.tag != BTOR2_TAG_SORT_bitvec
-          || l->sort.bitvec.width != 1)
+      if (l->sort.tag != BTOR2_TAG_SORT_bitvec || l->sort.bitvec.width != 1)
         return perr_bfr (bfr, "expected bitvec of size 1");
       if (cmp_sorts (bfr, args[0], l))
         return perr_bfr (bfr,
@@ -1174,8 +1168,7 @@ parse_constant_bfr (Btor2Parser *bfr, Btor2Line *l)
   ungetc_bfr (bfr, '\n');
   pushc_bfr (bfr, 0);
 
-  if (l->tag == BTOR2_TAG_const
-      && strlen (bfr->buf) != l->sort.bitvec.width)
+  if (l->tag == BTOR2_TAG_const && strlen (bfr->buf) != l->sort.bitvec.width)
   {
     return perr_bfr (bfr,
                      "constant '%s' does not match bit-vector sort size %u",
@@ -1323,8 +1316,8 @@ parse_justice_bfr (Btor2Parser *bfr, Btor2Line *l)
   {                                                                            \
     if (!strcmp (tag, #NAME))                                                  \
     {                                                                          \
-      Btor2Line *LINE =                                                   \
-          new_line_bfr (bfr, id, lineno, #NAME, BTOR2_TAG_##NAME);       \
+      Btor2Line *LINE =                                                        \
+          new_line_bfr (bfr, id, lineno, #NAME, BTOR2_TAG_##NAME);             \
       if (parse_##GENERIC##_bfr (bfr, LINE))                                   \
       {                                                                        \
         pusht_bfr (bfr, LINE);                                                 \

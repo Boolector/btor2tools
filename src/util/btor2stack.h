@@ -17,7 +17,7 @@
 
 #include "btor2mem.h"
 
-#define BTOR2_DECLARE_STACK(name, type) \
+#define BTOR2_DECLARE_STACK(name, type)   \
   typedef struct name##Stack name##Stack; \
   struct name##Stack                      \
   {                                       \
@@ -31,11 +31,11 @@ BTOR2_DECLARE_STACK (BtorCharPtr, char *);
 BTOR2_DECLARE_STACK (BtorVoidPtr, void *);
 
 #define BTOR2_INIT_STACK(stack) \
-  do                              \
-  {                               \
-    (stack).start = 0;            \
-    (stack).top   = 0;            \
-    (stack).end   = 0;            \
+  do                            \
+  {                             \
+    (stack).start = 0;          \
+    (stack).top   = 0;          \
+    (stack).end   = 0;          \
   } while (0)
 
 #define BTOR2_COUNT_STACK(stack) ((stack).top - (stack).start)
@@ -45,35 +45,35 @@ BTOR2_DECLARE_STACK (BtorVoidPtr, void *);
 #define BTOR2_RESET_STACK(stack) ((stack).top = (stack).start)
 
 #define BTOR2_RELEASE_STACK(stack) \
-  do                                 \
-  {                                  \
+  do                               \
+  {                                \
     BTOR2_DELETE ((stack).start);  \
     BTOR2_INIT_STACK ((stack));    \
   } while (0)
 
-#define BTOR2_ENLARGE(p, o, n)          \
+#define BTOR2_ENLARGE(p, o, n)            \
   do                                      \
   {                                       \
     size_t internaln = (o) ? 2 * (o) : 1; \
-    BTOR2_REALLOC ((p), internaln);     \
+    BTOR2_REALLOC ((p), internaln);       \
     (n) = internaln;                      \
   } while (0)
 
 #define BTOR2_ENLARGE_STACK(stack)                         \
-  do                                                         \
-  {                                                          \
+  do                                                       \
+  {                                                        \
     size_t old_size  = BTOR2_SIZE_STACK (stack), new_size; \
     size_t old_count = BTOR2_COUNT_STACK (stack);          \
     BTOR2_ENLARGE ((stack).start, old_size, new_size);     \
-    (stack).top = (stack).start + old_count;                 \
-    (stack).end = (stack).start + new_size;                  \
+    (stack).top = (stack).start + old_count;               \
+    (stack).end = (stack).start + new_size;                \
   } while (0)
 
-#define BTOR2_PUSH_STACK(stack, elem)                                \
-  do                                                                   \
-  {                                                                    \
+#define BTOR2_PUSH_STACK(stack, elem)                              \
+  do                                                               \
+  {                                                                \
     if (BTOR2_FULL_STACK ((stack))) BTOR2_ENLARGE_STACK ((stack)); \
-    *((stack).top++) = (elem);                                         \
+    *((stack).top++) = (elem);                                     \
   } while (0)
 
 #define BTOR2_POP_STACK(stack) \
@@ -83,10 +83,10 @@ BTOR2_DECLARE_STACK (BtorVoidPtr, void *);
   (assert ((idx) < BTOR2_COUNT_STACK (stack)), (stack).start[idx])
 
 #define BTOR2_POKE_STACK(stack, idx, elem)      \
-  do                                              \
-  {                                               \
+  do                                            \
+  {                                             \
     assert ((idx) < BTOR2_COUNT_STACK (stack)); \
-    (stack).start[idx] = (elem);                  \
+    (stack).start[idx] = (elem);                \
   } while (0)
 
 #endif

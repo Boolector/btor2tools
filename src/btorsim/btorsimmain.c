@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "btor2parser/btor2parser.h"
 #include "btorsimbv.h"
 #include "btorsimrng.h"
-#include "btor2parser/btor2parser.h"
 #include "util/btor2mem.h"
 #include "util/btor2stack.h"
 
@@ -405,12 +405,8 @@ simulate (long id)
         assert (l->nargs == 1);
         res = btorsim_bv_not (args[0]);
         break;
-      case BTOR2_TAG_one:
-        res = btorsim_bv_one (l->sort.bitvec.width);
-        break;
-      case BTOR2_TAG_ones:
-        res = btorsim_bv_ones (l->sort.bitvec.width);
-        break;
+      case BTOR2_TAG_one: res = btorsim_bv_one (l->sort.bitvec.width); break;
+      case BTOR2_TAG_ones: res = btorsim_bv_ones (l->sort.bitvec.width); break;
       case BTOR2_TAG_or:
         assert (l->nargs == 2);
         res = btorsim_bv_or (args[0], args[1]);
@@ -468,9 +464,7 @@ simulate (long id)
         assert (l->nargs == 2);
         res = btorsim_bv_xor (args[0], args[1]);
         break;
-      case BTOR2_TAG_zero:
-        res = btorsim_bv_zero (l->sort.bitvec.width);
-        break;
+      case BTOR2_TAG_zero: res = btorsim_bv_zero (l->sort.bitvec.width); break;
       default:
         die ("can not randomly simulate operator '%s' at line %ld",
              l->name,
@@ -501,7 +495,7 @@ initialize_inputs (long k, int randomize)
   for (long i = 0; i < BTOR2_COUNT_STACK (inputs); i++)
   {
     Btor2Line *input = BTOR2_PEEK_STACK (inputs, i);
-    uint32_t width        = input->sort.bitvec.width;
+    uint32_t width   = input->sort.bitvec.width;
     if (current_state[input->id]) continue;
     BtorSimBitVector *update;
     if (randomize)
@@ -567,8 +561,8 @@ simulate_step (long k, int randomize_states_that_are_inputs)
     if (!l) continue;
     if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
         || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
-        || l->tag == BTOR2_TAG_constraint
-        || l->tag == BTOR2_TAG_fair || l->tag == BTOR2_TAG_justice)
+        || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
+        || l->tag == BTOR2_TAG_justice)
       continue;
 
     BtorSimBitVector *bv = simulate (i);
@@ -609,7 +603,7 @@ simulate_step (long k, int randomize_states_that_are_inputs)
     for (long i = 0; i < BTOR2_COUNT_STACK (constraints); i++)
     {
       Btor2Line *constraint = BTOR2_PEEK_STACK (constraints, i);
-      BtorSimBitVector *bv       = current_state[constraint->args[0]];
+      BtorSimBitVector *bv  = current_state[constraint->args[0]];
       if (!btorsim_bv_is_zero (bv)) continue;
       msg (1,
            "constraint(%ld) '%ld constraint %ld' violated at time %ld",
@@ -627,7 +621,7 @@ simulate_step (long k, int randomize_states_that_are_inputs)
     {
       long r = BTOR2_PEEK_STACK (reached_bads, i);
       if (r >= 0) continue;
-      Btor2Line *bad  = BTOR2_PEEK_STACK (bads, i);
+      Btor2Line *bad       = BTOR2_PEEK_STACK (bads, i);
       BtorSimBitVector *bv = current_state[bad->args[0]];
       if (btorsim_bv_is_zero (bv)) continue;
       long bound = BTOR2_PEEK_STACK (reached_bads, i);
@@ -928,7 +922,7 @@ parse_state_part (long k)
                    state->id,
                    k);
     BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
-    Btor2Line *init  = inits[state->id];
+    Btor2Line *init       = inits[state->id];
     if (init)
     {
       assert (init->nargs == 2);
@@ -1061,8 +1055,8 @@ parse_sat_witness ()
 
   for (long i = 0; i < BTOR2_COUNT_STACK (claimed_bad_witnesses); i++)
   {
-    long bad_pos      = BTOR2_PEEK_STACK (claimed_bad_witnesses, i);
-    long bound        = BTOR2_PEEK_STACK (reached_bads, bad_pos);
+    long bad_pos = BTOR2_PEEK_STACK (claimed_bad_witnesses, i);
+    long bound   = BTOR2_PEEK_STACK (reached_bads, bad_pos);
     Btor2Line *l = BTOR2_PEEK_STACK (bads, bad_pos);
     if (bound < 0)
       die ("claimed bad state property 'b%ld' id %ld not reached",

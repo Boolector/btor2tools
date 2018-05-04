@@ -147,16 +147,16 @@ struct Btor2Sort
 
 struct Btor2Line
 {
-  long id;           /* positive id (non zero)                 */
-  long lineno;       /* line number in original file           */
-  const char *name;  /* name in ASCII: "and", "add", ...       */
-  Btor2Tag tag;      /* same as name but encoded as integer    */
+  long id;          /* positive id (non zero)                 */
+  long lineno;      /* line number in original file           */
+  const char *name; /* name in ASCII: "and", "add", ...       */
+  Btor2Tag tag;     /* same as name but encoded as integer    */
   Btor2Sort sort;
-  long init, next;   /* non zero if initialized or has next    */
-  char *constant;    /* non zero for const, constd, consth     */
-  char *symbol;      /* optional for: var array state input    */
-  unsigned nargs;    /* number of arguments                    */
-  long *args;        /* non zero ids up to nargs               */
+  long init, next; /* non zero if initialized or has next    */
+  char *constant;  /* non zero for const, constd, consth     */
+  char *symbol;    /* optional for: var array state input    */
+  unsigned nargs;  /* number of arguments                    */
+  long *args;      /* non zero ids up to nargs               */
 };
 
 struct Btor2LineIterator

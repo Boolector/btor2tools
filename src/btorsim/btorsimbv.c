@@ -18,7 +18,7 @@
 #include <ctype.h>
 #include <limits.h>
 
-#define BTOR2_MASK_REM_BITS(bv)                          \
+#define BTOR2_MASK_REM_BITS(bv)                            \
   ((((BTORSIM_BV_TYPE) 1 << (BTORSIM_BV_TYPE_BW - 1)) - 1) \
    >> (BTORSIM_BV_TYPE_BW - 1 - (bv->width % BTORSIM_BV_TYPE_BW)))
 
