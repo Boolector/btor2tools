@@ -53,6 +53,7 @@ do
     -static) static=yes;;
     -gcov) gcov=yes;;
     -gprof) gprof=yes;;
+    -h|-help|--help) usage;;
     -*) die "invalid option '$1' (try '-h')";;
   esac
   shift
