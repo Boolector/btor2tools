@@ -3,7 +3,8 @@ CFLAGS=@CFLAGS@
 BINDIR=@BINDIR@
 BUILDIR=@BUILDIR@
 SRCDIR=@SRCDIR@
-all: $(BUILDIR)/btor2parser.o $(BUILDIR)/libbtor2parser.a $(BINDIR)/catbtor $(BINDIR)/btorsim
+TARGETS=@TARGETS@
+all: $(BUILDIR)/btor2parser.o $(BUILDIR)/libbtor2parser.a $(TARGETS)
 dirs:
 	mkdir -p $(BUILDIR)
 	mkdir -p $(BINDIR)
@@ -12,6 +13,8 @@ $(BUILDIR)/btor2parser.o: dirs makefile
 $(BUILDIR)/libbtor2parser.a: $(BUILDIR)/btor2parser.o makefile
 	ar rc $@ $(BUILDIR)/btor2parser.o
 	ranlib $@
+$(BUILDIR)/libbtor2parser.so: $(BUILDIR)/btor2parser.o
+	$(CC) $(CFLAGS) -shared -o $@ $(BUILDIR)/btor2parser.o $(LIBS) -Xlinker -soname=libbtor2parser.so
 $(BUILDIR)/catbtor.o: $(BUILDIR)/btor2parser.o makefile
 	$(CC) $(CFLAGS) -o $@ -c $(SRCDIR)/catbtor.c -I$(SRCDIR)
 $(BINDIR)/catbtor: dirs $(BUILDIR)/catbtor.o $(BUILDIR)/libbtor2parser.a makefile

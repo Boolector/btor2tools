@@ -28,6 +28,7 @@ main (int argc, char** argv)
   Btor2Parser* reader;
   Btor2LineIterator it;
   Btor2Line* l;
+  unsigned j;
   int i, verbosity = 0;
   const char* err;
   for (i = 1; i < argc; i++)
@@ -120,7 +121,7 @@ main (int argc, char** argv)
     }
     else if (l->sort.id)
       printf (" %ld", l->sort.id);
-    for (i = 0; i < l->nargs; i++) printf (" %ld", l->args[i]);
+    for (j = 0; j < l->nargs; j++) printf (" %ld", l->args[j]);
     if (l->tag == BTOR2_TAG_slice) printf (" %ld %ld", l->args[1], l->args[2]);
     if (l->tag == BTOR2_TAG_sext || l->tag == BTOR2_TAG_uext)
       printf (" %ld", l->args[1]);
