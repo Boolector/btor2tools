@@ -22,6 +22,8 @@ static int close_input;
 static FILE* input_file;
 static const char* input_name;
 
+/* Parse BTOR2 file and print to stdout. */
+
 int
 main (int argc, char** argv)
 {
