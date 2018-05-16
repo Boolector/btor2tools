@@ -1,5 +1,6 @@
 #!/bin/sh
 
+asan=no
 check=no
 debug=no
 gcov=no
@@ -27,6 +28,7 @@ where <option> is one of the following:
   -g                compile with debugging support
   -c                check assertions even in optimized compilation
   -shared           shared library
+  -asan             compile with -fsanitize=address -fsanitize-recover=address
   -gcov             compile with -fprofile-arcs -ftest-coverage
   -gprof            compile with -pg
 
@@ -51,6 +53,7 @@ do
     -flto) flto=yes;;
     -shared) shared=yes;;
     -static) static=yes;;
+    -asan) asan=yes;;
     -gcov) gcov=yes;;
     -gprof) gprof=yes;;
     -h|-help|--help) usage;;
@@ -84,7 +87,9 @@ elif [ $debug = no ]
 then
   die "CFLAGS environment variable defined and '-O' used"
 fi
+[ $asan = yes ] && CFLAGS="$CFLAGS -fsanitize=address -fsanitize-recover=address"
 [ $gcov = yes ] && CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+[ $gprof = yes ] && CFLAGS="$CFLAGS -pg"
 echo "$CC $CFLAGS"
 rm -f makefile
 BINDIR="bin"
