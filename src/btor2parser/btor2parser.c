@@ -1250,6 +1250,7 @@ check_state_init (Btor2Parser *bfr, long state_id, long init_id)
   } while (!BTOR2_EMPTY_STACK (stack));
 
   free (cache);
+  BTOR2_RELEASE_STACK (stack);
   return res;
 }
 
