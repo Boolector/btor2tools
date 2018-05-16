@@ -1,7 +1,5 @@
 #!/bin/sh
 
-readonly RED='\033[0;31m'
-readonly NOCOLOR='\033[0m'
 readonly DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly OUTDIR=$DIR/out
 
@@ -21,12 +19,13 @@ then
 fi
 
 invalid () {
-  echo "$RED invalid$NOCOLOR"
+  :
 }
+
+mkdir -p $OUTDIR
 
 set -x
 
-mkdir -p $OUTDIR
 ### Check witnesses from model checker
 $BTORSIM      -c     count2.btor2               $MCWITNESSDIR/count2.witnessmc
 $BTORSIM      -c     count4.btor2               $MCWITNESSDIR/count4.witnessmc
@@ -59,21 +58,21 @@ $BTORSIM      -c     twocount32.btor2           $OUTDIR/twocount32.witnesssim
 # Run simulation
 $BTORSIM -b 0 -r 20  noninitstate.btor2       > $OUTDIR/noninitstate.nowitnesssim
 # Check witness produced by simulation
-$BTORSIM      -c     noninitstate.btor2         $OUTDIR/noninitstate.nowitnesssim 2>/dev/null && invalid
+$BTORSIM      -c     noninitstate.btor2         $OUTDIR/noninitstate.nowitnesssim || invalid
 # Run simulation
 $BTORSIM -b 0 -r 20  recount4.btor2           > $OUTDIR/recount4.nowitnesssim
 # Check witness produced by simulation
-$BTORSIM      -c     recount4.btor2             $OUTDIR/recount4.nowitnesssim     2>/dev/null && invalid
+$BTORSIM      -c     recount4.btor2             $OUTDIR/recount4.nowitnesssim     || invalid
 # Run simulation
 $BTORSIM -b 0 -r 20  twocount2c.btor2         > $OUTDIR/twocount2c.nowitnesssim
 # Check witness produced by simulation
-$BTORSIM      -c     twocount2c.btor2           $OUTDIR/twocount2c.nowitnesssim   2>/dev/null && invalid
+$BTORSIM      -c     twocount2c.btor2           $OUTDIR/twocount2c.nowitnesssim   || invalid
 
 
 ### Real world example
 # Run simulation (invalid witness)
 $BTORSIM -b 0 -r 999 ponylink-slaveTXlen-sat.btor2 > $OUTDIR/ponylink-slaveTXlen.nowitnesssim
 # Check witness from simulation
-$BTORSIM      -c     ponylink-slaveTXlen-sat.btor2   $OUTDIR/ponylink-slaveTXlen.nowitnesssim 2>/dev/null && invalid
+$BTORSIM      -c     ponylink-slaveTXlen-sat.btor2   $OUTDIR/ponylink-slaveTXlen.nowitnesssim || invalid
 # Check witness from model checker
 $BTORSIM      -c     ponylink-slaveTXlen-sat.btor2   $MCWITNESSDIR/ponylink-slaveTXlen.witnessmc
