@@ -1,7 +1,11 @@
 #!/bin/sh
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NOCOLOR='\033[0m'
+
+readonly SCRIPTDIR=$(dirname "$(readlink -f $0)")
+readonly BINDIR=$SCRIPTDIR/../bin
+
+readonly GREEN='\033[0;32m'
+readonly RED='\033[0;31m'
+readonly NOCOLOR='\033[0m'
 
 ok=0
 failed=0
@@ -16,7 +20,7 @@ runtest ()
 {
   echo -n "$1 ..."
   rm -f $1.log
-  ../bin/catbtor $1.in 1>$1.log 2>&1
+  $BINDIR/catbtor $1.in 1>$1.log 2>&1
   if diff $1.log $1.out 1>/dev/null 2>/dev/null
   then
     echo -en "${GREEN} ok${NOCOLOR}\r"
@@ -29,8 +33,7 @@ runtest ()
   total=`expr $total + 1`
 }
 
-cd `dirname $0` || exit 1
-cd tests || exit 1
+cd $SCRIPTDIR/tests || exit 1
 
 for i in *.in
 do
