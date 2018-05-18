@@ -33,8 +33,6 @@ typedef struct Btor2Parser Btor2Parser;
 typedef struct Btor2Line Btor2Line;
 typedef struct Btor2Sort Btor2Sort;
 typedef struct Btor2LineIterator Btor2LineIterator;
-typedef enum Btor2Tag Btor2Tag;
-typedef enum Btor2SortTag Btor2SortTag;
 
 /*------------------------------------------------------------------------*/
 
@@ -117,12 +115,14 @@ enum Btor2Tag
   BTOR2_TAG_xor,
   BTOR2_TAG_zero,
 };
+typedef enum Btor2Tag Btor2Tag;
 
 enum Btor2SortTag
 {
   BTOR2_TAG_SORT_array,
   BTOR2_TAG_SORT_bitvec,
 };
+typedef enum Btor2SortTag Btor2SortTag;
 
 /*------------------------------------------------------------------------*/
 
