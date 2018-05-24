@@ -9,6 +9,8 @@ flto=no
 shared=no
 static=no
 
+flags=none
+
 #--------------------------------------------------------------------------#
 
 die () {
@@ -31,6 +33,7 @@ where <option> is one of the following:
   -asan             compile with -fsanitize=address -fsanitize-recover=address
   -gcov             compile with -fprofile-arcs -ftest-coverage
   -gprof            compile with -pg
+  -f...|-m...       add compiler options
 
 You might also want to use the environment variables
 CC and CXX to specify the used C and C++ compiler, as in
@@ -56,6 +59,7 @@ do
     -asan) asan=yes;;
     -gcov) gcov=yes;;
     -gprof) gprof=yes;;
+    -f*|-m*) if [ $flags = none ]; then flags=$1; else flags="$flags $1"; fi;;
     -h|-help|--help) usage;;
     -*) die "invalid option '$1' (try '-h')";;
   esac
@@ -72,6 +76,7 @@ then
   CFLAGS="-W -Wall -Wextra -Wredundant-decls"
   [ $static = yes ] && CFLAGS="$CFLAGS -static"
   [ $shared = yes ] && CFLAGS="$CFLAGS -fPIC"
+  [ $flags = none ] || CFLAGS="$CFLAGS $flags"
   if [ $debug = yes ]
   then
     CFLAGS="$CFLAGS -g3 -ggdb"
