@@ -8,6 +8,7 @@ gprof=no
 flto=no
 shared=no
 static=no
+arch=unknown
 
 flags=none
 
@@ -29,6 +30,7 @@ where <option> is one of the following:
   -static           static compilation
   -g                compile with debugging support
   -c                check assertions even in optimized compilation
+  -m{32,64}         force 32-bit or 64-bit compilation
   -shared           shared library
   -asan             compile with -fsanitize=address -fsanitize-recover=address
   -gcov             compile with -fprofile-arcs -ftest-coverage
@@ -53,6 +55,8 @@ do
     -g) debug=yes;;
     -O) debug=no;;
     -c) check=yes;;
+    -m32|--m32) arch=32;;
+    -m64|--m64) arch=64;;
     -flto) flto=yes;;
     -shared) shared=yes;;
     -static) static=yes;;
@@ -74,6 +78,8 @@ if [ X"$CFLAGS" = X ]
 then
   [ $debug = unknown ] && debug=no
   CFLAGS="-W -Wall -Wextra -Wredundant-decls"
+  [ $arch = 32 ] && CFLAGS="$CFLAGS -m32"
+  [ $arch = 64 ] && CFLAGS="$CFLAGS -m64"
   [ $static = yes ] && CFLAGS="$CFLAGS -static"
   [ $shared = yes ] && CFLAGS="$CFLAGS -fPIC"
   [ $flags = none ] || CFLAGS="$CFLAGS $flags"
