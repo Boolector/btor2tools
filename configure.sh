@@ -73,7 +73,7 @@ done
 if [ X"$CFLAGS" = X ]
 then
   [ $debug = unknown ] && debug=no
-  CFLAGS="-W -Wall -Wextra -Wredundant-decls"
+  CFLAGS="-W -Wall -Wextra -Wredundant-decls -std=gnu99"
   [ $static = yes ] && CFLAGS="$CFLAGS -static"
   [ $shared = yes ] && CFLAGS="$CFLAGS -fPIC"
   [ $flags = none ] || CFLAGS="$CFLAGS $flags"
