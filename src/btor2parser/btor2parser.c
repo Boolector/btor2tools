@@ -1264,7 +1264,7 @@ parse_init_bfr (Btor2Parser *bfr, Btor2Line *l)
   state = id2line_bfr (bfr, l->args[0]);
   if (state->tag != BTOR2_TAG_state)
     return perr_bfr (bfr, "expected state as first argument");
-  if (l->args[0] < abs (l->args[1]))
+  if (l->args[0] < labs (l->args[1]))
     return perr_bfr (bfr, "state id must be greater than id of second operand");
   if (!check_state_init (bfr, l->args[0], l->args[1])) return 0;
   if (state->init)

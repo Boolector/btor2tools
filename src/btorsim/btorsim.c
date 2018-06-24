@@ -795,12 +795,11 @@ static long
 parse_unsigned_number (int *ch_ptr)
 {
   int ch = next_char ();
-  long res;
+  long res = 0;
   if (ch == '0')
   {
     ch = next_char ();
     if (isdigit (ch)) parse_error ("unexpected digit '%c' after '0'", ch);
-    res = 0;
   }
   else if (!isdigit (ch))
     parse_error ("expected digit");
@@ -945,7 +944,7 @@ parse_input_part (long k)
 {
   int ch = next_char ();
   if (ch != '@' || parse_unsigned_number (&ch) != k || ch != '\n')
-    parse_assignment ("missing '@%ld' input part in frame %ld", k, k);
+    parse_assignment ();
   long input_pos;
   while ((input_pos = parse_assignment ()) >= 0)
   {
