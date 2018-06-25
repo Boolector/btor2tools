@@ -728,7 +728,7 @@ next_char ()
   }
   else
   {
-    res = getc_unlocked (witness_file);
+    res = getc (witness_file);
   }
   if (res == '\n')
   {
