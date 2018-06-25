@@ -21,11 +21,12 @@
 /*------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <limits.h>
 
 /*------------------------------------------------------------------------*/
 
-#define BTOR2_FORMAT_MAXID (1l << 40) /* assume 64-bit compilation */
-#define BTOR2_FORMAT_MAXBITWIDTH ((1l << 31) - 1)
+#define BTOR2_FORMAT_MAXID (LONG_MAX) /* assume 64-bit compilation */
+#define BTOR2_FORMAT_MAXBITWIDTH ((1l << 30) + ((1l << 30) - 1))
 
 /*------------------------------------------------------------------------*/
 
