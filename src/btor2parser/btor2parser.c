@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,8 +27,8 @@ struct Btor2Parser
   char *error;
   Btor2Line **table, *new_line;
   Btor2Sort **stable;
-  long sztable, ntable, szstable, nstable, szbuf, nbuf, lineno;
-  int saved;
+  int64_t sztable, ntable, szstable, nstable, szbuf, nbuf, lineno;
+  int32_t saved;
   char *buf;
   FILE *file;
 };
@@ -67,7 +68,7 @@ btor2parser_new ()
 static void
 reset_bfr (Btor2Parser *bfr)
 {
-  int i;
+  int32_t i;
   assert (bfr);
   if (bfr->error)
   {
@@ -104,10 +105,10 @@ btor2parser_delete (Btor2Parser *bfr)
   free (bfr);
 }
 
-static int
+static int32_t
 getc_bfr (Btor2Parser *bfr)
 {
-  int ch;
+  int32_t ch;
   if ((ch = bfr->saved) == EOF)
     ch = getc (bfr->file);
   else
@@ -117,7 +118,7 @@ getc_bfr (Btor2Parser *bfr)
 }
 
 static void
-ungetc_bfr (Btor2Parser *bfr, int ch)
+ungetc_bfr (Btor2Parser *bfr, int32_t ch)
 {
   assert (bfr->saved == EOF);
   if (ch == EOF) return;
@@ -129,7 +130,7 @@ ungetc_bfr (Btor2Parser *bfr, int ch)
   }
 }
 
-static int
+static int32_t
 perr_bfr (Btor2Parser *bfr, const char *fmt, ...)
 {
   assert (!bfr->error);
@@ -142,12 +143,12 @@ perr_bfr (Btor2Parser *bfr, const char *fmt, ...)
   buf[1023] = '\0';
 
   bfr->error = btor2parser_malloc (strlen (buf) + 28);
-  sprintf (bfr->error, "line %ld: %s", bfr->lineno, buf);
+  sprintf (bfr->error, "line %" PRId64 ": %s", bfr->lineno, buf);
   return 0;
 }
 
 static void
-pushc_bfr (Btor2Parser *bfr, int ch)
+pushc_bfr (Btor2Parser *bfr, int32_t ch)
 {
   if (bfr->nbuf >= bfr->szbuf)
   {
@@ -168,11 +169,11 @@ pusht_bfr (Btor2Parser *bfr, Btor2Line *l)
   bfr->table[bfr->ntable++] = l;
 }
 
-static int
-parse_id_bfr (Btor2Parser *bfr, long *res)
+static int32_t
+parse_id_bfr (Btor2Parser *bfr, int64_t *res)
 {
-  long id;
-  int ch;
+  int64_t id;
+  int32_t ch;
   ch = getc_bfr (bfr);
   if (ch == '0') return perr_bfr (bfr, "id should start with non-zero digit");
   if (!isdigit (ch)) return perr_bfr (bfr, "id should start with digit");
@@ -187,10 +188,10 @@ parse_id_bfr (Btor2Parser *bfr, long *res)
   return 1;
 }
 
-static int
-parse_signed_id_bfr (Btor2Parser *bfr, long *res)
+static int32_t
+parse_signed_id_bfr (Btor2Parser *bfr, int64_t *res)
 {
-  int ch, sign;
+  int32_t ch, sign;
   ch = getc_bfr (bfr);
   if (ch == '-')
     sign = -1;
@@ -204,11 +205,11 @@ parse_signed_id_bfr (Btor2Parser *bfr, long *res)
   return 1;
 }
 
-static int
-parse_pos_number_bfr (Btor2Parser *bfr, unsigned *res)
+static int32_t
+parse_pos_number_bfr (Btor2Parser *bfr, uint32_t *res)
 {
-  long num;
-  int ch;
+  int64_t num;
+  int32_t ch;
   ch = getc_bfr (bfr);
   if (!isdigit (ch))
   {
@@ -230,7 +231,7 @@ parse_pos_number_bfr (Btor2Parser *bfr, unsigned *res)
     num = 10 * num + (ch - '0');
     if (num >= BTOR2_FORMAT_MAXBITWIDTH)
       return perr_bfr (bfr,
-                       "number exceeds maximum bit width of %ld",
+                       "number exceeds maximum bit width of %" PRId64,
                        BTOR2_FORMAT_MAXBITWIDTH);
     ch = getc_bfr (bfr);
   }
@@ -240,17 +241,17 @@ parse_pos_number_bfr (Btor2Parser *bfr, unsigned *res)
 }
 
 static Btor2Line *
-id2line_bfr (Btor2Parser *bfr, long id)
+id2line_bfr (Btor2Parser *bfr, int64_t id)
 {
-  long absid = labs (id);
+  int64_t absid = labs (id);
   if (!absid || absid >= bfr->ntable) return 0;
   return bfr->table[absid];
 }
 
-static int
+static int32_t
 skip_comment (Btor2Parser *bfr)
 {
-  int ch;
+  int32_t ch;
   while ((ch = getc_bfr (bfr)) != '\n')
   {
     if (ch == EOF) return perr_bfr (bfr, "unexpected end-of-file in comment");
@@ -258,8 +259,8 @@ skip_comment (Btor2Parser *bfr)
   return 1;
 }
 
-static int
-cmp_sort_ids (Btor2Parser *bfr, long sort_id1, long sort_id2)
+static int32_t
+cmp_sort_ids (Btor2Parser *bfr, int64_t sort_id1, int64_t sort_id2)
 {
   (void) bfr;
   Btor2Line *s1, *s2;
@@ -274,16 +275,16 @@ cmp_sort_ids (Btor2Parser *bfr, long sort_id1, long sort_id2)
   return cmp_sort_ids (bfr, s1->sort.array.element, s2->sort.array.element);
 }
 
-static int
+static int32_t
 cmp_sorts (Btor2Parser *bfr, Btor2Line *l1, Btor2Line *l2)
 {
   return cmp_sort_ids (bfr, l1->sort.id, l2->sort.id);
 }
 
-static int
+static int32_t
 parse_sort_id_bfr (Btor2Parser *bfr, Btor2Sort *res)
 {
-  long sort_id;
+  int64_t sort_id;
   Btor2Line *s;
   if (!parse_id_bfr (bfr, &sort_id)) return 0;
 
@@ -300,7 +301,7 @@ parse_sort_id_bfr (Btor2Parser *bfr, Btor2Sort *res)
 static const char *
 parse_tag (Btor2Parser *bfr)
 {
-  int ch;
+  int32_t ch;
   bfr->nbuf = 0;
   while ('a' <= (ch = getc_bfr (bfr)) && ch <= 'z') pushc_bfr (bfr, ch);
   if (!bfr->nbuf)
@@ -317,10 +318,10 @@ parse_tag (Btor2Parser *bfr)
   return bfr->buf;
 }
 
-static int
+static int32_t
 parse_symbol_bfr (Btor2Parser *bfr)
 {
-  int ch;
+  int32_t ch;
   bfr->nbuf = 0;
   while ((ch = getc_bfr (bfr)) != '\n')
   {
@@ -349,10 +350,10 @@ parse_symbol_bfr (Btor2Parser *bfr)
   return 1;
 }
 
-static int
+static int32_t
 parse_opt_symbol_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  int ch;
+  int32_t ch;
   if ((ch = getc_bfr (bfr)) == ' ')
   {
     ch = getc_bfr (bfr);
@@ -374,8 +375,11 @@ parse_opt_symbol_bfr (Btor2Parser *bfr, Btor2Line *l)
 }
 
 static Btor2Line *
-new_line_bfr (
-    Btor2Parser *bfr, long id, long lineno, const char *name, Btor2Tag tag)
+new_line_bfr (Btor2Parser *bfr,
+              int64_t id,
+              int64_t lineno,
+              const char *name,
+              Btor2Tag tag)
 {
   Btor2Line *res;
   assert (0 < id);
@@ -386,17 +390,17 @@ new_line_bfr (
   res->lineno = lineno;
   res->tag    = tag;
   res->name   = name;
-  res->args   = btor2parser_malloc (sizeof (long) * 3);
-  memset (res->args, 0, sizeof (long) * 3);
+  res->args   = btor2parser_malloc (sizeof (int64_t) * 3);
+  memset (res->args, 0, sizeof (int64_t) * 3);
   while (bfr->ntable < id) pusht_bfr (bfr, 0);
   assert (bfr->ntable == id);
   return res;
 }
 
-static int
+static int32_t
 check_sort_bitvec (Btor2Parser *bfr, Btor2Line *l, Btor2Line *args[])
 {
-  unsigned i;
+  uint32_t i;
   /* check if bit-vector operators have bit-vector operands */
   if (l->sort.tag != BTOR2_TAG_SORT_bitvec)
     return perr_bfr (bfr, "expected bitvec sort for %s", l->name);
@@ -411,8 +415,8 @@ check_sort_bitvec (Btor2Parser *bfr, Btor2Line *l, Btor2Line *args[])
   return 1;
 }
 
-static int
-is_constant_bfr (Btor2Parser *bfr, long id)
+static int32_t
+is_constant_bfr (Btor2Parser *bfr, int64_t id)
 {
   Btor2Line *l = id2line_bfr (bfr, id);
   assert (l);
@@ -422,12 +426,12 @@ is_constant_bfr (Btor2Parser *bfr, long id)
          || tag == BTOR2_TAG_ones || tag == BTOR2_TAG_zero;
 }
 
-static int
+static int32_t
 check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   Btor2Line *arg;
   Btor2Line *args[3];
-  unsigned i;
+  uint32_t i;
   if (l->tag != BTOR2_TAG_justice)
   {
     for (i = 0; i < l->nargs; i++) args[i] = id2line_bfr (bfr, l->args[i]);
@@ -516,7 +520,7 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
           if (cmp_sort_ids (bfr, l->sort.array.element, args[1]->sort.id))
             return perr_bfr (bfr,
                              "sort of init value does not match element "
-                             "sort of state '%ld'",
+                             "sort of state '%" PRId64 "'",
                              args[0]->id);
         }
         break;
@@ -593,9 +597,9 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       /* NOTE: this cast is safe since l->args[1] and l->args[2] contains
-       *       upper and lower indices, which are unsigned */
-      unsigned upper = (unsigned) l->args[1];
-      unsigned lower = (unsigned) l->args[2];
+       *       upper and lower indices, which are uint32_t */
+      uint32_t upper = (uint32_t) l->args[1];
+      uint32_t lower = (uint32_t) l->args[2];
       if (l->sort.bitvec.width != upper - lower + 1)
         return perr_bfr (bfr,
                          "expected bitvec of size %u for %s but got %u",
@@ -675,8 +679,8 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       /* NOTE: this cast is safe since l->args[1] contains the extension
-       *       bit-width, which is unsigned */
-      unsigned ext = args[0]->sort.bitvec.width + (unsigned) l->args[1];
+       *       bit-width, which is uint32_t */
+      uint32_t ext = args[0]->sort.bitvec.width + (uint32_t) l->args[1];
       if (l->sort.bitvec.width != ext)
         return perr_bfr (bfr,
                          "expected bitvec of size %u for %s but got %u",
@@ -739,11 +743,11 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static long
+static int64_t
 parse_arg_bfr (Btor2Parser *bfr)
 {
   Btor2Line *l;
-  long res, absres;
+  int64_t res, absres;
   if (!parse_signed_id_bfr (bfr, &res)) return 0;
   absres = labs (res);
   if (absres >= bfr->ntable)
@@ -761,7 +765,7 @@ parse_arg_bfr (Btor2Parser *bfr)
   return res;
 }
 
-static int
+static int32_t
 parse_sort_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   const char *tag;
@@ -795,10 +799,10 @@ parse_sort_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
-parse_args (Btor2Parser *bfr, Btor2Line *l, unsigned nargs)
+static int32_t
+parse_args (Btor2Parser *bfr, Btor2Line *l, uint32_t nargs)
 {
-  unsigned i = 0;
+  uint32_t i = 0;
   if (getc_bfr (bfr) != ' ')
     return perr_bfr (bfr, "expected space after sort id");
   while (i < nargs)
@@ -812,7 +816,7 @@ parse_args (Btor2Parser *bfr, Btor2Line *l, unsigned nargs)
   return 1;
 }
 
-static int
+static int32_t
 parse_unary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
@@ -820,10 +824,10 @@ parse_unary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
+static int32_t
 parse_ext_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  unsigned ext;
+  uint32_t ext;
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
   if (!parse_args (bfr, l, 1)) return 0;
   if (getc_bfr (bfr) != ' ')
@@ -833,10 +837,10 @@ parse_ext_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
+static int32_t
 parse_slice_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  unsigned lower;
+  uint32_t lower;
   if (!parse_ext_bfr (bfr, l)) return 0;
   if (getc_bfr (bfr) != ' ')
     return perr_bfr (bfr, "expected space after second argument");
@@ -847,7 +851,7 @@ parse_slice_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
+static int32_t
 parse_binary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
@@ -855,7 +859,7 @@ parse_binary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
+static int32_t
 parse_ternary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
@@ -863,8 +867,8 @@ parse_ternary_op_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
-check_consth (const char *consth, unsigned width)
+static int32_t
+check_consth (const char *consth, uint32_t width)
 {
   char c;
   size_t i, len, req_width;
@@ -897,7 +901,7 @@ check_consth (const char *consth, unsigned width)
 }
 
 #ifndef NDEBUG
-static int
+static int32_t
 is_bin_str (const char *c)
 {
   const char *p;
@@ -950,7 +954,7 @@ mult_unbounded_bin_str (const char *a, const char *b)
   assert (is_bin_str (b));
 
   char *res, *r, c, x, y, s, m;
-  unsigned alen, blen, rlen, i;
+  uint32_t alen, blen, rlen, i;
   const char *p;
 
   a = strip_zeroes (a);
@@ -1008,7 +1012,7 @@ add_unbounded_bin_str (const char *a, const char *b)
   assert (is_bin_str (b));
 
   char *res, *r, c, x, y, s, *tmp;
-  unsigned alen, blen, rlen;
+  uint32_t alen, blen, rlen;
   const char *p, *q;
 
   a = strip_zeroes (a);
@@ -1058,7 +1062,7 @@ add_unbounded_bin_str (const char *a, const char *b)
 }
 
 static char *
-dec_to_bin_str (const char *str, unsigned len)
+dec_to_bin_str (const char *str, uint32_t len)
 {
   assert (str);
 
@@ -1096,13 +1100,13 @@ dec_to_bin_str (const char *str, unsigned len)
   return btor2parser_strdup ("0");
 }
 
-int
-check_constd (const char *str, unsigned width)
+int32_t
+check_constd (const char *str, uint32_t width)
 {
   assert (str);
   assert (width);
 
-  int is_neg, is_min_val = 0, res;
+  int32_t is_neg, is_min_val = 0, res;
   char *bits;
   size_t size_bits, len;
 
@@ -1122,7 +1126,7 @@ check_constd (const char *str, unsigned width)
   return res;
 }
 
-static int
+static int32_t
 parse_constant_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   if (!parse_sort_id_bfr (bfr, &l->sort)) return 0;
@@ -1136,7 +1140,7 @@ parse_constant_bfr (Btor2Parser *bfr, Btor2Line *l)
     return 1;
   }
 
-  int ch = getc_bfr (bfr);
+  int32_t ch = getc_bfr (bfr);
   if (ch != ' ') return perr_bfr (bfr, "expected space after sort id");
 
   bfr->nbuf = 0;
@@ -1195,23 +1199,23 @@ parse_constant_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
+static int32_t
 parse_input_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   return parse_sort_id_bfr (bfr, &l->sort);
 }
 
-BTOR2_DECLARE_STACK (Btor2Long, long);
+BTOR2_DECLARE_STACK (Btor2Long, int64_t);
 
-static int
-check_state_init (Btor2Parser *bfr, long state_id, long init_id)
+static int32_t
+check_state_init (Btor2Parser *bfr, int64_t state_id, int64_t init_id)
 {
   assert (state_id > init_id);
   (void) state_id;
 
-  int res = 1;
-  long id;
-  unsigned i;
+  int32_t res = 1;
+  int64_t id;
+  uint32_t i;
   Btor2Line *line;
   Btor2LongStack stack;
   char *cache;
@@ -1242,7 +1246,7 @@ check_state_init (Btor2Parser *bfr, long state_id, long init_id)
     {
       res = perr_bfr (bfr,
                       "inputs are not allowed in initialization expressions, "
-                      "use a state instead of input %ld.",
+                      "use a state instead of input %" PRId64 ".",
                       id);
       break;
     }
@@ -1254,7 +1258,7 @@ check_state_init (Btor2Parser *bfr, long state_id, long init_id)
   return res;
 }
 
-static int
+static int32_t
 parse_init_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   Btor2Line *state;
@@ -1268,12 +1272,12 @@ parse_init_bfr (Btor2Parser *bfr, Btor2Line *l)
     return perr_bfr (bfr, "state id must be greater than id of second operand");
   if (!check_state_init (bfr, l->args[0], l->args[1])) return 0;
   if (state->init)
-    return perr_bfr (bfr, "state %ld initialized twice", state->id);
+    return perr_bfr (bfr, "state %" PRId64 " initialized twice", state->id);
   state->init = l->args[1];
   return 1;
 }
 
-static int
+static int32_t
 parse_next_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   Btor2Line *state;
@@ -1284,12 +1288,12 @@ parse_next_bfr (Btor2Parser *bfr, Btor2Line *l)
   if (state->tag != BTOR2_TAG_state)
     return perr_bfr (bfr, "expected state as first argument");
   if (state->next)
-    return perr_bfr (bfr, "next for state %ld set twice", state->id);
+    return perr_bfr (bfr, "next for state %" PRId64 " set twice", state->id);
   state->next = l->args[1];
   return 1;
 }
 
-static int
+static int32_t
 parse_constraint_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   /* contraint, bad, justice, fairness do not have a sort id after the tag */
@@ -1301,12 +1305,12 @@ parse_constraint_bfr (Btor2Parser *bfr, Btor2Line *l)
   return 1;
 }
 
-static int
+static int32_t
 parse_justice_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
-  unsigned nargs;
+  uint32_t nargs;
   if (!parse_pos_number_bfr (bfr, &nargs)) return 0;
-  l->args  = realloc (l->args, sizeof (long) * nargs);
+  l->args  = realloc (l->args, sizeof (int64_t) * nargs);
   l->nargs = nargs;
   if (!parse_args (bfr, l, nargs)) return 0;
   return 1;
@@ -1340,13 +1344,13 @@ parse_justice_bfr (Btor2Parser *bfr, Btor2Line *l)
 // 1) allow white spaces at beginning of the line
 // 2) allow comments at the end of the line
 
-static int
+static int32_t
 readl_bfr (Btor2Parser *bfr)
 {
   const char *tag;
-  long lineno;
-  long id;
-  int ch;
+  int64_t lineno;
+  int64_t id;
+  int32_t ch;
 START:
   // skip white spaces at the beginning of the line
   while ((ch = getc_bfr (bfr)) == ' ')
@@ -1464,7 +1468,7 @@ START:
   return perr_bfr (bfr, "invalid tag '%s'", tag);
 }
 
-int
+int32_t
 btor2parser_read_lines (Btor2Parser *bfr, FILE *file)
 {
   reset_bfr (bfr);
@@ -1482,10 +1486,10 @@ btor2parser_error (Btor2Parser *bfr)
   return bfr->error;
 }
 
-static long
-find_non_zero_line_bfr (Btor2Parser *bfr, long start)
+static int64_t
+find_non_zero_line_bfr (Btor2Parser *bfr, int64_t start)
 {
-  long res;
+  int64_t res;
   for (res = start; res < bfr->ntable; res++)
     if (bfr->table[res]) return res;
   return 0;
@@ -1516,12 +1520,12 @@ btor2parser_iter_next (Btor2LineIterator *it)
 }
 
 Btor2Line *
-btor2parser_get_line_by_id (Btor2Parser *bfr, long id)
+btor2parser_get_line_by_id (Btor2Parser *bfr, int64_t id)
 {
   return id2line_bfr (bfr, id);
 }
 
-long
+int64_t
 btor2parser_max_id (Btor2Parser *bfr)
 {
   return bfr->ntable - 1;

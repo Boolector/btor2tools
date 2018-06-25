@@ -20,12 +20,12 @@
 /* and A. Biere at CAV 2018.                                              */
 /*------------------------------------------------------------------------*/
 
+#include <stdint.h>
 #include <stdio.h>
-#include <limits.h>
 
 /*------------------------------------------------------------------------*/
 
-#define BTOR2_FORMAT_MAXID (LONG_MAX) /* assume 64-bit compilation */
+#define BTOR2_FORMAT_MAXID (((int64_t) 1) << 40)
 #define BTOR2_FORMAT_MAXBITWIDTH ((1l << 30) + ((1l << 30) - 1))
 
 /*------------------------------------------------------------------------*/
@@ -129,41 +129,41 @@ typedef enum Btor2SortTag Btor2SortTag;
 
 struct Btor2Sort
 {
-  long id;
+  int64_t id;
   Btor2SortTag tag;
   const char *name;
   union
   {
     struct
     {
-      long index;
-      long element;
+      int64_t index;
+      int64_t element;
     } array;
     struct
     {
-      unsigned width;
+      uint32_t width;
     } bitvec;
   };
 };
 
 struct Btor2Line
 {
-  long id;          /* positive id (non zero)                 */
-  long lineno;      /* line number in original file           */
+  int64_t id;       /* positive id (non zero)                 */
+  int64_t lineno;   /* line number in original file           */
   const char *name; /* name in ASCII: "and", "add", ...       */
   Btor2Tag tag;     /* same as name but encoded as integer    */
   Btor2Sort sort;
-  long init, next; /* non zero if initialized or has next    */
-  char *constant;  /* non zero for const, constd, consth     */
-  char *symbol;    /* optional for: var array state input    */
-  unsigned nargs;  /* number of arguments                    */
-  long *args;      /* non zero ids up to nargs               */
+  int64_t init, next; /* non zero if initialized or has next    */
+  char *constant;     /* non zero for const, constd, consth     */
+  char *symbol;       /* optional for: var array state input    */
+  uint32_t nargs;     /* number of arguments                    */
+  int64_t *args;      /* non zero ids up to nargs               */
 };
 
 struct Btor2LineIterator
 {
   Btor2Parser *reader;
-  long next;
+  int64_t next;
 };
 
 /*------------------------------------------------------------------------*/
@@ -178,7 +178,7 @@ void btor2parser_delete (Btor2Parser *);
  * the actual read or parse error, which includes the line number where
  * the error occurred.
  */
-int btor2parser_read_lines (Btor2Parser *, FILE *);
+int32_t btor2parser_read_lines (Btor2Parser *, FILE *);
 const char *btor2parser_error (Btor2Parser *);
 
 /*------------------------------------------------------------------------*/
@@ -197,8 +197,8 @@ Btor2Line *btor2parser_iter_next (Btor2LineIterator *);
  * can be retrieved with the following function.  Note, however, that
  * ids might be negative and denote the negation of the actual node.
  */
-long btor2parser_max_id (Btor2Parser *);
-Btor2Line *btor2parser_get_line_by_id (Btor2Parser *, long id);
+int64_t btor2parser_max_id (Btor2Parser *);
+Btor2Line *btor2parser_get_line_by_id (Btor2Parser *, int64_t id);
 
 /*------------------------------------------------------------------------*/
 
