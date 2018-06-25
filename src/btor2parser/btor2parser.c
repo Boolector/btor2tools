@@ -784,6 +784,7 @@ parse_sort_bfr (Btor2Parser *bfr, Btor2Line *l)
   {
     tmp.tag  = BTOR2_TAG_SORT_array;
     tmp.name = "array";
+    s.id = 0;   /* get rid of false positive compiler warning */
     if (!parse_sort_id_bfr (bfr, &s)) return 0;
     if (getc_bfr (bfr) != ' ') return perr_bfr (bfr, "expected space");
     tmp.array.index = s.id;
