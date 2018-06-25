@@ -204,7 +204,7 @@ btorsim_bv_const (const char *str, uint32_t bw)
 }
 
 #ifndef NDEBUG
-static int
+static int32_t
 is_bin_str (const char *c)
 {
   const char *p;
@@ -235,7 +235,7 @@ mult_unbounded_bin_str (const char *a, const char *b)
   assert (is_bin_str (b));
 
   char *res, *r, c, x, y, s, m;
-  unsigned alen, blen, rlen, i;
+  uint32_t alen, blen, rlen, i;
   const char *p;
 
   a = strip_zeroes (a);
@@ -293,7 +293,7 @@ add_unbounded_bin_str (const char *a, const char *b)
   assert (is_bin_str (b));
 
   char *res, *r, c, x, y, s, *tmp;
-  unsigned alen, blen, rlen;
+  uint32_t alen, blen, rlen;
   const char *p, *q;
 
   a = strip_zeroes (a);
@@ -365,7 +365,7 @@ digit2const (char ch)
 }
 
 static char *
-dec_to_bin_str (const char *str, unsigned len)
+dec_to_bin_str (const char *str, uint32_t len)
 {
   assert (str);
 
@@ -404,13 +404,13 @@ dec_to_bin_str (const char *str, unsigned len)
 }
 
 #ifndef NDEBUG
-static int
-check_constd (const char *str, unsigned width)
+static int32_t
+check_constd (const char *str, uint32_t width)
 {
   assert (str);
   assert (width);
 
-  int is_neg, is_min_val = 0, res;
+  int32_t is_neg, is_min_val = 0, res;
   char *bits;
   size_t size_bits, len;
 
@@ -476,8 +476,8 @@ btorsim_bv_constd (const char *str, uint32_t bw)
 }
 
 #ifndef NDEBUG
-static int
-check_consth (const char *consth, unsigned width)
+static int32_t
+check_consth (const char *consth, uint32_t width)
 {
   char c;
   size_t i, len, req_width;

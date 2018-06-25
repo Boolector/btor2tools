@@ -14,24 +14,25 @@
 #include "btor2parser/btor2parser.h"
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static int close_input;
+static int32_t close_input;
 static FILE* input_file;
 static const char* input_name;
 
 /* Parse BTOR2 file and print to stdout. */
 
-int
-main (int argc, char** argv)
+int32_t
+main (int32_t argc, char** argv)
 {
   Btor2Parser* reader;
   Btor2LineIterator it;
   Btor2Line* l;
-  unsigned j;
-  int i, verbosity = 0;
+  uint32_t j;
+  int32_t i, verbosity = 0;
   const char* err;
   for (i = 1; i < argc; i++)
   {
@@ -105,7 +106,7 @@ main (int argc, char** argv)
   it = btor2parser_iter_init (reader);
   while ((l = btor2parser_iter_next (&it)))
   {
-    printf ("%ld %s", l->id, l->name);
+    printf ("%" PRId64 " %s", l->id, l->name);
     if (l->tag == BTOR2_TAG_sort)
     {
       printf (" %s", l->sort.name);
@@ -113,7 +114,7 @@ main (int argc, char** argv)
       {
         case BTOR2_TAG_SORT_bitvec: printf (" %u", l->sort.bitvec.width); break;
         case BTOR2_TAG_SORT_array:
-          printf (" %ld %ld", l->sort.array.index, l->sort.array.element);
+          printf (" %" PRId64 " %" PRId64, l->sort.array.index, l->sort.array.element);
           break;
         default:
           assert (0);
@@ -122,11 +123,11 @@ main (int argc, char** argv)
       }
     }
     else if (l->sort.id)
-      printf (" %ld", l->sort.id);
-    for (j = 0; j < l->nargs; j++) printf (" %ld", l->args[j]);
-    if (l->tag == BTOR2_TAG_slice) printf (" %ld %ld", l->args[1], l->args[2]);
+      printf (" %" PRId64, l->sort.id);
+    for (j = 0; j < l->nargs; j++) printf (" %" PRId64, l->args[j]);
+    if (l->tag == BTOR2_TAG_slice) printf (" %" PRId64 " %" PRId64, l->args[1], l->args[2]);
     if (l->tag == BTOR2_TAG_sext || l->tag == BTOR2_TAG_uext)
-      printf (" %ld", l->args[1]);
+      printf (" %" PRId64, l->args[1]);
     if (l->constant) printf (" %s", l->constant);
     if (l->symbol) printf (" %s", l->symbol);
     fputc ('\n', stdout);
