@@ -153,7 +153,7 @@ as defined below (`B_[n]` represents a bit-vector sort of size n, and
 
 | Operator       | Description           | Signature                          |
 | -------------- | --------------------- | ---------------------------------- |
-| `ite`          | conditional           | `B_[1] x B_[n] x B_[n] -> B_[1]`   |
+| `ite`          | conditional           | `B_[1] x B_[n] x B_[n] -> B_[n]`   |
 | `write`        | array write           | `A_[I -> E] x I x E -> A_[I -> E]` |
 
 
