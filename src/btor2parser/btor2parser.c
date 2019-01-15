@@ -3,7 +3,7 @@
  *
  *  Copyright (c) 2012-2018 Armin Biere.
  *  Copyright (c) 2017 Mathias Preiner.
- *  Copyright (c) 2017-2018 Aina Niemetz.
+ *  Copyright (c) 2017-2019 Aina Niemetz.
  *
  *  All rights reserved.
  *
@@ -42,6 +42,20 @@ btor2parser_malloc (size_t size)
   if (!res)
   {
     fprintf (stderr, "[btor2parser] memory allocation failed\n");
+    abort ();
+  }
+  return res;
+}
+
+static void *
+btor2parser_realloc (void *ptr, size_t size)
+{
+  assert (size);
+
+  void *res = realloc (ptr, size);
+  if (!res)
+  {
+    fprintf (stderr, "[btor2parser] memory reallocation failed\n");
     abort ();
   }
   return res;
@@ -153,7 +167,7 @@ pushc_bfr (Btor2Parser *bfr, int32_t ch)
   if (bfr->nbuf >= bfr->szbuf)
   {
     bfr->szbuf = bfr->szbuf ? 2 * bfr->szbuf : 1;
-    bfr->buf   = realloc (bfr->buf, bfr->szbuf * sizeof *bfr->buf);
+    bfr->buf   = btor2parser_realloc (bfr->buf, bfr->szbuf * sizeof *bfr->buf);
   }
   bfr->buf[bfr->nbuf++] = ch;
 }
@@ -164,7 +178,8 @@ pusht_bfr (Btor2Parser *bfr, Btor2Line *l)
   if (bfr->ntable >= bfr->sztable)
   {
     bfr->sztable = bfr->sztable ? 2 * bfr->sztable : 1;
-    bfr->table   = realloc (bfr->table, bfr->sztable * sizeof *bfr->table);
+    bfr->table =
+        btor2parser_realloc (bfr->table, bfr->sztable * sizeof *bfr->table);
   }
   bfr->table[bfr->ntable++] = l;
 }
@@ -1311,7 +1326,7 @@ parse_justice_bfr (Btor2Parser *bfr, Btor2Line *l)
 {
   uint32_t nargs;
   if (!parse_pos_number_bfr (bfr, &nargs)) return 0;
-  l->args  = realloc (l->args, sizeof (int64_t) * nargs);
+  l->args  = btor2parser_realloc (l->args, sizeof (int64_t) * nargs);
   l->nargs = nargs;
   if (!parse_args (bfr, l, nargs)) return 0;
   return 1;
