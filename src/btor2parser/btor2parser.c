@@ -1186,12 +1186,12 @@ parse_constant_bfr (Btor2Parser *bfr, Btor2Line *l)
     perr_bfr (bfr, "expected number");
     return 0;
   }
-  if (ch != '\n')
+  if (ch != '\n' && ch != ' ')
   {
     perr_bfr (bfr, "invalid character '%c' in constant definition", ch);
     return 0;
   }
-  ungetc_bfr (bfr, '\n');
+  ungetc_bfr (bfr, ch);
   pushc_bfr (bfr, 0);
 
   if (l->tag == BTOR2_TAG_const && strlen (bfr->buf) != l->sort.bitvec.width)
