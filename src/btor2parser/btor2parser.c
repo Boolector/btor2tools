@@ -459,7 +459,6 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
     case BTOR2_TAG_inc:
     case BTOR2_TAG_neg:
     case BTOR2_TAG_not:
-    case BTOR2_TAG_output:
       assert (l->nargs == 1);
       if (!check_sort_bitvec (bfr, l, args)) return 0;
       if (l->sort.bitvec.width != args[0]->sort.bitvec.width)
@@ -653,6 +652,13 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
                          "but got %u",
                          l->name,
                          args[0]->sort.bitvec.width);
+      break;
+
+    /* n */
+    case BTOR2_TAG_output:
+      assert (l->nargs == 1);
+      if (args[0]->sort.tag != BTOR2_TAG_SORT_bitvec)
+        return perr_bfr (bfr, "expected bitvec sort for %s", l->name);
       break;
 
     case BTOR2_TAG_ite:
@@ -1431,7 +1437,7 @@ START:
       PARSE (one, constant);
       PARSE (ones, constant);
       PARSE (or, binary_op);
-      PARSE (output, unary_op);
+      PARSE (output, constraint);
       break;
     case 'r':
       PARSE (read, binary_op);
