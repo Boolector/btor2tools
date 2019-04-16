@@ -67,7 +67,7 @@ enum Btor2Tag
   BTOR2_TAG_justice,
   BTOR2_TAG_mul,
   BTOR2_TAG_nand,
-  BTOR2_TAG_ne,
+  BTOR2_TAG_neq,
   BTOR2_TAG_neg,
   BTOR2_TAG_next,
   BTOR2_TAG_nor,

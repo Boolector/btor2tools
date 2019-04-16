@@ -236,7 +236,7 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_ite:
     case BTOR2_TAG_mul:
     case BTOR2_TAG_nand:
-    case BTOR2_TAG_ne:
+    case BTOR2_TAG_neq:
     case BTOR2_TAG_nor:
     case BTOR2_TAG_not:
     case BTOR2_TAG_one:
@@ -394,9 +394,9 @@ simulate (int64_t id)
         assert (l->nargs == 2);
         res = btorsim_bv_nand (args[0], args[1]);
         break;
-      case BTOR2_TAG_ne:
+      case BTOR2_TAG_neq:
         assert (l->nargs == 2);
-        res = btorsim_bv_ne (args[0], args[1]);
+        res = btorsim_bv_neq (args[0], args[1]);
         break;
       case BTOR2_TAG_nor:
         assert (l->nargs == 2);

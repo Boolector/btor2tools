@@ -161,8 +161,8 @@ BtorSimBitVector *btorsim_bv_xor (const BtorSimBitVector *a,
 BtorSimBitVector *btorsim_bv_eq (const BtorSimBitVector *a,
                                  const BtorSimBitVector *b);
 
-BtorSimBitVector *btorsim_bv_ne (const BtorSimBitVector *a,
-                                 const BtorSimBitVector *b);
+BtorSimBitVector *btorsim_bv_neq (const BtorSimBitVector *a,
+                                  const BtorSimBitVector *b);
 
 BtorSimBitVector *btorsim_bv_ult (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);

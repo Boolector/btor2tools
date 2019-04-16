@@ -579,7 +579,7 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
       break;
 
     case BTOR2_TAG_eq:
-    case BTOR2_TAG_ne:
+    case BTOR2_TAG_neq:
       assert (l->nargs == 2);
       if (l->sort.bitvec.width != 1)
         return perr_bfr (bfr,
@@ -1427,7 +1427,7 @@ START:
     case 'm': PARSE (mul, binary_op); break;
     case 'n':
       PARSE (nand, binary_op);
-      PARSE (ne, binary_op);
+      PARSE (neq, binary_op);
       PARSE (neg, unary_op);
       PARSE (next, next);
       PARSE (nor, binary_op);

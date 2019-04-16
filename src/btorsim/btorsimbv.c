@@ -1458,7 +1458,7 @@ btorsim_bv_eq (const BtorSimBitVector *a, const BtorSimBitVector *b)
 }
 
 BtorSimBitVector *
-btorsim_bv_ne (const BtorSimBitVector *a, const BtorSimBitVector *b)
+btorsim_bv_neq (const BtorSimBitVector *a, const BtorSimBitVector *b)
 {
   assert (a);
   assert (b);
