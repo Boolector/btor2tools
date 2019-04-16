@@ -140,7 +140,7 @@ as defined below (`B_[n]` represents a bit-vector sort of size n, and
 | Operator                                          | Description           | Signature                  |
 | ------------------------------------------------- | --------------------- | -------------------------- |
 | `iff`, `implies`                                  | Boolean               | `B_[1] x B_[1] -> B_[1]`   |
-| `eq`, `neq`                                       | (dis)equality         | `S x S -> B_[1]`           |
+| `eq`, `ne`                                        | (dis)equality         | `S x S -> B_[1]`           |
 | `[su]gt`, `[su]gte`, `[su]lt`, `[su]lte`          | (un)signed inequality | `B_[n] x B_[n] -> B_[1]`   |
 | `and`, `nand`, `nor`, `or`, `xnor`, `xor`         | bit-wise              | `B_[n] x B_[n] -> B_[n]`   |
 | `rol`, `ror`, `sll`, `sra`, `srl`                 | rotate, shift         | `B_[n] x B_[n] -> B_[n]`   |
