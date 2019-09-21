@@ -1,5 +1,7 @@
 #!/bin/sh
 
+BUILD_DIR=build
+
 asan=no
 check=no
 debug=no
@@ -96,11 +98,10 @@ fi
 [ $gcov = yes ] && CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
 [ $gprof = yes ] && CFLAGS="$CFLAGS -pg"
 echo "$CC $CFLAGS"
-rm -f makefile
-BINDIR="bin"
-BUILDIR="build"
-SRCDIR="src"
-TARGETS="$BINDIR/catbtor $BINDIR/btorsim"
+
+rm -rf "${BUILD_DIR}"
+mkdir -p "${BUILD_DIR}"
+
 [ $shared = yes ] && TARGETS="$TARGETS $BUILDIR/libbtor2parser.so"
 sed \
   -e "s,@CC@,$CC," \
@@ -111,3 +112,6 @@ sed \
   -e "s,@TARGETS@,$TARGETS," \
   makefile.in > makefile
 echo "makefile generated"
+
+[ $debug = yes ] && cmake_opts="$cmake_opts -DCMAKE_BUILD_TYPE=Debug"
+[ $check = yes ] && cmake_opts="$cmake_opts -DCHECK=ON"

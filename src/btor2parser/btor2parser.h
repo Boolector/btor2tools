@@ -23,6 +23,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#if __cplusplus
+extern "C" {
+#endif
+
 /*------------------------------------------------------------------------*/
 
 #define BTOR2_FORMAT_MAXID (((int64_t) 1) << 40)
@@ -202,4 +206,7 @@ Btor2Line *btor2parser_get_line_by_id (Btor2Parser *, int64_t id);
 
 /*------------------------------------------------------------------------*/
 
+#if __cplusplus
+}
+#endif
 #endif
