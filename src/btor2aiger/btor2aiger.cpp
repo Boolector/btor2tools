@@ -20,7 +20,8 @@ print_usage ()
   std::cout << "Usage:" << std::endl;
   std::cout << "  btor2aiger [options] BTOR2_FILE\n" << std::endl;
   std::cout << "Options:" << std::endl;
-  std::cout << "  -a       Print in AIGER ascii format." << std::endl;
+  std::cout << "  -h,--help   Print this help and exit." << std::endl;
+  std::cout << "  -a          Print in AIGER ascii format." << std::endl;
   std::cout << std::endl;
 }
 
@@ -29,11 +30,10 @@ die (const char *fmt, ...)
 {
   va_list ap;
   va_start (ap, fmt);
-  fprintf (stdout, "error: ");
-  vfprintf (stdout, fmt, ap);
+  fprintf (stderr, "error: ");
+  vfprintf (stderr, fmt, ap);
   va_end (ap);
-  fprintf (stdout, "\n\n");
-  print_usage ();
+  fprintf (stderr, "\n");
   exit (EXIT_FAILURE);
 }
 
@@ -114,13 +114,6 @@ class Btor2Model
     return it != next.end () ? it->second : nullptr;
   }
 };
-
-static void
-unsupported (Btor2Line *l)
-{
-  std::cout << l->id << " unsupported tag: " << l->name << std::endl;
-  abort ();
-}
 
 using BtorUnaryFun   = BoolectorNode *(*) (Btor *, BoolectorNode *);
 using BtorBinaryFun  = BoolectorNode *(*) (Btor *,
@@ -298,7 +291,7 @@ parse_btor2 (FILE *infile, Btor2Model &model)
         break;
 
       case BTOR2_TAG_fair:
-      case BTOR2_TAG_justice: unsupported (l); break;
+      case BTOR2_TAG_justice: die ("unsupported tag: %s", l->name); break;
 
       case BTOR2_TAG_output: model.outputs.push_back (args[0]); break;
 
@@ -324,7 +317,7 @@ parse_btor2 (FILE *infile, Btor2Model &model)
         }
         else
         {
-          unsupported (l);
+          die ("unsupported tag: %s", l->name);
         }
         assert (node);
         model.add_node (l->id, node);
@@ -526,6 +519,11 @@ main (int argc, char *argv[])
     if (!strcmp (argv[i], "-a"))
     {
       ascii_mode = true;
+    }
+    else if (!strcmp (argv[i], "-h") || !strcmp (argv[i], "--help"))
+    {
+      print_usage ();
+      return EXIT_SUCCESS;
     }
     else
     {
