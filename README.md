@@ -145,7 +145,7 @@ as defined below (`B_[n]` represents a bit-vector sort of size n, and
 | `and`, `nand`, `nor`, `or`, `xnor`, `xor`         | bit-wise              | `B_[n] x B_[n] -> B_[n]`   |
 | `rol`, `ror`, `sll`, `sra`, `srl`                 | rotate, shift         | `B_[n] x B_[n] -> B_[n]`   |
 | `add`, `mul`, `[su]div`, `smod`, `[su]rem`, `sub` | arithmetic            | `B_[n] x B_[n] -> B_[n]`   |
-| `[su]addo`, `[su]divo`, `[su]mulo`, `[su]subo`    | overflow              | `B_[n] x B_[n] -> B_[1]`   |
+| `[su]addo`, `sdivo`, `[su]mulo`, `[su]subo`       | overflow              | `B_[n] x B_[n] -> B_[1]`   |
 | `concat`                                          | concatenation         | `B_[n] x B_[m] -> B_[n+m]` |
 | `read`                                            | array read            | `A_[I -> E] x I -> E`      |
 
