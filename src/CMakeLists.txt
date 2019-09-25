@@ -23,3 +23,5 @@ if(BUILD_BTOR2AIGER)
   target_compile_options(btor2aiger PRIVATE -std=c++11 -Wall -g -g3 -ggdb)
   target_link_libraries(btor2aiger btor2parser Boolector::boolector)
 endif()
+
+add_executable(btorsplit btorsplit.cpp)
