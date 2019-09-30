@@ -541,6 +541,10 @@ main (int argc, char *argv[])
   }
 
   infile = fopen (infilename, "r");
+  if (!infile)
+  {
+    die ("Cannot open BTOR2 input file.");
+  }
   Btor2Model model;
   parse_btor2 (infile, model);
   fclose (infile);
