@@ -344,12 +344,7 @@ aig_visitor (void *state,
              uint64_t child1_id)
 {
   (void) symbol;
-  if (!is_post) return;
-  if (!child0_id)
-  {
-    // std::cout << "skip: " << node_id << std::endl;
-    return;
-  }
+  if (!is_post || !child0_id) return;
   AIGVisitorState *vstate = static_cast<AIGVisitorState *> (state);
   if (vstate->cache.find (node_id) != vstate->cache.end ()) return;
   aiger_add_and (vstate->aig, node_id, child0_id, child1_id);
@@ -450,12 +445,6 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
     add_input_to_aiger (model.btor, amgr, aig, n);
   }
 
-  for (BoolectorNode *n : model.outputs)
-  {
-    boolector_aig_bitblast (amgr, n);
-    add_output_to_aiger (model.btor, amgr, aig, n);
-  }
-
   for (auto kv : model.states)
   {
     boolector_aig_bitblast (amgr, kv.second);
@@ -464,6 +453,13 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
   for (auto kv : model.init)
   {
     boolector_aig_bitblast (amgr, kv.second);
+  }
+
+  for (BoolectorNode *n : model.outputs)
+  {
+    boolector_aig_bitblast (amgr, n);
+    boolector_aig_visit (amgr, n, aig_visitor, &aig_visitor_state);
+    add_output_to_aiger (model.btor, amgr, aig, n);
   }
 
   for (auto kv : model.next)
