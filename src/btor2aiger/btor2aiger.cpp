@@ -22,6 +22,7 @@ print_usage ()
   std::cout << "Options:" << std::endl;
   std::cout << "  -h,--help   Print this help and exit." << std::endl;
   std::cout << "  -a          Print in AIGER ascii format." << std::endl;
+  std::cout << "  -i          Ignore AIGER errors." << std::endl;
   std::cout << std::endl;
 }
 
@@ -433,7 +434,7 @@ add_state_to_aiger (Btor *btor,
 }
 
 static void
-generate_aiger (Btor2Model &model, bool ascii_mode)
+generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
 {
   BoolectorAIGMgr *amgr;
   aiger *aig;
@@ -494,7 +495,7 @@ generate_aiger (Btor2Model &model, bool ascii_mode)
   }
 
   const char *err = aiger_check (aig);
-  if (err)
+  if (err && !ignore_error)
   {
     die (err);
   }
@@ -513,12 +514,17 @@ main (int argc, char *argv[])
   FILE *infile     = 0;
   char *infilename = 0;
   bool ascii_mode  = false;
+  bool ignore_error = false;
 
   for (int i = 1; i < argc; ++i)
   {
     if (!strcmp (argv[i], "-a"))
     {
       ascii_mode = true;
+    }
+    else if (!strcmp (argv[i], "-i"))
+    {
+      ignore_error = true;
     }
     else if (!strcmp (argv[i], "-h") || !strcmp (argv[i], "--help"))
     {
@@ -548,7 +554,7 @@ main (int argc, char *argv[])
   Btor2Model model;
   parse_btor2 (infile, model);
   fclose (infile);
-  generate_aiger (model, ascii_mode);
+  generate_aiger (model, ascii_mode, ignore_error);
 
   return EXIT_SUCCESS;
 }
