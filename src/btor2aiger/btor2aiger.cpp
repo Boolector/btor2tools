@@ -415,17 +415,47 @@ add_state_to_aiger (Btor *btor,
                      state_bits[i],
                      next_bits ? next_bits[i] : 0,
                      boolector_aig_get_symbol (amgr, state_bits[i]));
-    if (init)
-    {
-      assert (init_bits[i] == 0 || init_bits[i] == 1);
-      aiger_add_reset (
-          aig, state_bits[i], init_bits[i] < 2 ? init_bits[i] : state_bits[i]);
-    }
+    aiger_add_reset (
+        aig,
+        state_bits[i],
+        init_bits && init_bits[i] < 2 ? init_bits[i] : state_bits[i]);
   }
 
   boolector_aig_free_bits (amgr, state_bits, nbits);
   if (next) boolector_aig_free_bits (amgr, next_bits, nbits);
   if (init) boolector_aig_free_bits (amgr, init_bits, nbits);
+}
+
+static void
+add_constraint_to_aiger (Btor *btor,
+                         BoolectorAIGMgr *amgr,
+                         aiger *aig,
+                         BoolectorNode *constraint)
+{
+  size_t nbits;
+  uint64_t *bits;
+
+  nbits = boolector_get_width (btor, constraint);
+  assert (nbits == 1);
+  bits = boolector_aig_get_bits (amgr, constraint);
+  aiger_add_constraint (aig, bits[0], boolector_aig_get_symbol (amgr, bits[0]));
+  boolector_aig_free_bits (amgr, bits, nbits);
+}
+
+static void
+add_bad_to_aiger (Btor *btor,
+                  BoolectorAIGMgr *amgr,
+                  aiger *aig,
+                  BoolectorNode *constraint)
+{
+  size_t nbits;
+  uint64_t *bits;
+
+  nbits = boolector_get_width (btor, constraint);
+  assert (nbits == 1);
+  bits = boolector_aig_get_bits (amgr, constraint);
+  aiger_add_bad (aig, bits[0], boolector_aig_get_symbol (amgr, bits[0]));
+  boolector_aig_free_bits (amgr, bits, nbits);
 }
 
 static void
@@ -482,12 +512,14 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
   {
     boolector_aig_bitblast (amgr, n);
     boolector_aig_visit (amgr, n, aig_visitor, &aig_visitor_state);
+    add_constraint_to_aiger (model.btor, amgr, aig, n);
   }
 
   for (BoolectorNode *n : model.bad)
   {
     boolector_aig_bitblast (amgr, n);
     boolector_aig_visit (amgr, n, aig_visitor, &aig_visitor_state);
+    add_bad_to_aiger (model.btor, amgr, aig, n);
   }
 
   const char *err = aiger_check (aig);
