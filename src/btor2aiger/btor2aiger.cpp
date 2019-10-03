@@ -398,12 +398,23 @@ add_state_to_aiger (Btor *btor,
                     BoolectorNode *init)
 {
   size_t nbits;
-  uint64_t *state_bits, *next_bits, *init_bits;
+  const char *sym;
+  uint64_t *state_bits, *next_bits, *init_bits, reset_val;
 
   state_bits = next_bits = init_bits = nullptr;
 
   nbits = boolector_get_width (btor, state);
+  assert (!init || nbits == boolector_get_width (btor, init));
   assert (!next || nbits == boolector_get_width (btor, next));
+
+  if (init && !next)
+  {
+    /* Note: BTOR2 allows states without next function to be initialized,
+     * which are essentially inputs with an initial value in the first time
+     * frame. In AIGER we would need to add more logic to have the same
+     * behavior, which we omit for now and skip the benchmark. */
+    die ("Found initialized state without next function");
+  }
 
   state_bits = boolector_aig_get_bits (amgr, state);
   if (next) next_bits = boolector_aig_get_bits (amgr, next);
@@ -411,14 +422,25 @@ add_state_to_aiger (Btor *btor,
 
   for (size_t i = 0; i < nbits; ++i)
   {
-    aiger_add_latch (aig,
-                     state_bits[i],
-                     next_bits ? next_bits[i] : 0,
-                     boolector_aig_get_symbol (amgr, state_bits[i]));
-    aiger_add_reset (
-        aig,
-        state_bits[i],
-        init_bits && init_bits[i] < 2 ? init_bits[i] : state_bits[i]);
+    if (init_bits && init_bits[i] != 0 && init_bits[i] != 1)
+    {
+      /* Note: BTOR2 supports arbitrary initialization functions, but AIGER
+       * only supports 0/1/undefined. */
+      die ("Found non-constant initialization");
+    }
+    sym = boolector_aig_get_symbol (amgr, state_bits[i]);
+    if (next_bits)
+    {
+      reset_val = init_bits ? init_bits[i] : state_bits[i];
+      aiger_add_latch (aig, state_bits[i], next_bits[i], sym);
+      aiger_add_reset (aig, state_bits[i], reset_val);
+    }
+    else
+    {
+      /* Note: BTOR2 handles states without next function as input. Thus,
+       * we have to create an input in AIGER. */
+      aiger_add_input (aig, state_bits[i], sym);
+    }
   }
 
   boolector_aig_free_bits (amgr, state_bits, nbits);
