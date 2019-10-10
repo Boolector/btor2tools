@@ -46,7 +46,6 @@ class Btor2Model
   Btor *btor;
 
   std::vector<BoolectorNode *> inputs;
-  std::vector<BoolectorNode *> outputs;
   std::unordered_map<int64_t, BoolectorNode *> states;
   std::unordered_map<int64_t, BoolectorNode *> init;
   std::unordered_map<int64_t, BoolectorNode *> next;
@@ -294,7 +293,8 @@ parse_btor2 (FILE *infile, Btor2Model &model)
       case BTOR2_TAG_fair:
       case BTOR2_TAG_justice: die ("unsupported tag: %s", l->name); break;
 
-      case BTOR2_TAG_output: model.outputs.push_back (args[0]); break;
+      /* BTOR2 outputs can be ignored. */
+      case BTOR2_TAG_output: break;
 
       default:
         node = nullptr;
@@ -366,25 +366,6 @@ add_input_to_aiger (Btor *btor,
   for (size_t i = 0; i < nbits; ++i)
   {
     aiger_add_input (aig, bits[i], boolector_aig_get_symbol (amgr, bits[i]));
-  }
-  boolector_aig_free_bits (amgr, bits, nbits);
-}
-
-static void
-add_output_to_aiger (Btor *btor,
-                     BoolectorAIGMgr *amgr,
-                     aiger *aig,
-                     BoolectorNode *output)
-{
-  size_t nbits;
-  uint64_t *bits;
-
-  nbits = boolector_get_width (btor, output);
-  bits  = boolector_aig_get_bits (amgr, output);
-
-  for (size_t i = 0; i < nbits; ++i)
-  {
-    aiger_add_output (aig, bits[i], boolector_aig_get_symbol (amgr, bits[i]));
   }
   boolector_aig_free_bits (amgr, bits, nbits);
 }
@@ -505,13 +486,6 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
   for (auto kv : model.init)
   {
     boolector_aig_bitblast (amgr, kv.second);
-  }
-
-  for (BoolectorNode *n : model.outputs)
-  {
-    boolector_aig_bitblast (amgr, n);
-    boolector_aig_visit (amgr, n, aig_visitor, &aig_visitor_state);
-    add_output_to_aiger (model.btor, amgr, aig, n);
   }
 
   for (auto kv : model.next)
