@@ -317,6 +317,15 @@ parse_model ()
   Btor2LineIterator it = btor2parser_iter_init (model);
   Btor2Line *line;
   while ((line = btor2parser_iter_next (&it))) parse_model_line (line);
+
+  for (int64_t i = 0; i < BTOR2_COUNT_STACK (states); i++)
+  {
+    Btor2Line *state = BTOR2_PEEK_STACK (states, i);
+    if (!nexts[state->id])
+    {
+      msg (1, "state %d without next function", state->id);
+    }
+  }
 }
 
 static void
@@ -846,7 +855,7 @@ parse_assignment ()
     found_end_of_witness = 1;
     return -1;
   }
-  if (ch == '@')
+  if (ch == '@' || ch == '#')
   {
     prev_char (ch);
     return -1;
@@ -878,16 +887,23 @@ static void
 parse_state_part (int64_t k)
 {
   int32_t ch = next_char ();
-  if (k > 0)
+  if (k == 0)
   {
-    if (ch == '#')
+    if (ch != '#' || parse_unsigned_number (&ch) != k || ch != '\n')
       parse_error (
-          "state assignments only supported in first frame at this point");
-    prev_char (ch);
-    return;
+          "missing '#%" PRId64 "' state part header of frame %" PRId64, k, k);
   }
-  if (ch != '#' || (ch = next_char ()) != '0' || (ch = next_char ()) != '\n')
-    parse_error ("missing '#0' state part header of frame 0");
+  else
+  {
+    if (ch != '#')
+    {
+      prev_char (ch);
+      return;
+    }
+    if (parse_unsigned_number (&ch) != k || ch != '\n')
+      parse_error (
+          "missing '#%" PRId64 "' state part header of frame %" PRId64, k, k);
+  }
   int64_t state_pos;
   while ((state_pos = parse_assignment ()) >= 0)
   {
@@ -916,14 +932,14 @@ parse_state_part (int64_t k)
       charno = constant_columno,
       parse_error ("expected constant of width '%u'", state->sort.bitvec.width);
     assert (0 <= state->id), assert (state->id < num_format_lines);
-    if (current_state[state->id])
+    if (current_state[state->id] && nexts[state->id])
       parse_error ("state %" PRId64 " id %" PRId64 " assigned twice in frame %" PRId64,
                    state_pos,
                    state->id,
                    k);
     BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
     Btor2Line *init       = inits[state->id];
-    if (init)
+    if (init && nexts[state->id])
     {
       assert (init->nargs == 2);
       assert (init->args[0] == state->id);
@@ -935,6 +951,15 @@ parse_state_part (int64_t k)
     }
     lineno++;
     charno = saved_charno;
+    if (k > 0 && nexts[state->id]
+        && btorsim_bv_compare (val, current_state[state->id]))
+    {
+      parse_error ("incompatible assignment for state %" PRId64 " id %" PRId64
+                   " in time frame %" PRId64,
+                   state_pos,
+                   state->id,
+                   k);
+    }
     update_current_state (state->id, val);
   }
   if (!k) found_initial_frame = 1;
