@@ -246,6 +246,7 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_one:
     case BTOR2_TAG_ones:
     case BTOR2_TAG_or:
+    case BTOR2_TAG_output:
     case BTOR2_TAG_redand:
     case BTOR2_TAG_redor:
     case BTOR2_TAG_sdiv:
@@ -273,7 +274,6 @@ parse_model_line (Btor2Line *l)
 
     case BTOR2_TAG_fair:
     case BTOR2_TAG_justice:
-    case BTOR2_TAG_output:
     case BTOR2_TAG_read:
     case BTOR2_TAG_redxor:
     case BTOR2_TAG_rol:
