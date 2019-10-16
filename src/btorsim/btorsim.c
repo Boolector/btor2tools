@@ -3,6 +3,7 @@
  *
  *  Copyright (c) 2018 Armin Biere.
  *  Copyright (c) 2018 Aina Niemetz.
+ *  Copyright (c) 2019 Mathias Preiner.
  *
  *  All rights reserved.
  *
@@ -231,11 +232,14 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_const:
     case BTOR2_TAG_constd:
     case BTOR2_TAG_consth:
+    case BTOR2_TAG_dec:
     case BTOR2_TAG_eq:
     case BTOR2_TAG_implies:
+    case BTOR2_TAG_inc:
     case BTOR2_TAG_ite:
     case BTOR2_TAG_mul:
     case BTOR2_TAG_nand:
+    case BTOR2_TAG_neg:
     case BTOR2_TAG_neq:
     case BTOR2_TAG_nor:
     case BTOR2_TAG_not:
@@ -244,47 +248,43 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_or:
     case BTOR2_TAG_redand:
     case BTOR2_TAG_redor:
+    case BTOR2_TAG_sdiv:
+    case BTOR2_TAG_sext:
+    case BTOR2_TAG_sgt:
+    case BTOR2_TAG_sgte:
     case BTOR2_TAG_slice:
+    case BTOR2_TAG_sll:
+    case BTOR2_TAG_slt:
+    case BTOR2_TAG_slte:
+    case BTOR2_TAG_sra:
+    case BTOR2_TAG_srem:
+    case BTOR2_TAG_srl:
     case BTOR2_TAG_sub:
+    case BTOR2_TAG_udiv:
     case BTOR2_TAG_uext:
     case BTOR2_TAG_ugt:
     case BTOR2_TAG_ugte:
     case BTOR2_TAG_ult:
     case BTOR2_TAG_ulte:
+    case BTOR2_TAG_urem:
     case BTOR2_TAG_xnor:
     case BTOR2_TAG_xor:
     case BTOR2_TAG_zero: break;
 
-    case BTOR2_TAG_dec:
     case BTOR2_TAG_fair:
-    case BTOR2_TAG_iff:
-    case BTOR2_TAG_inc:
     case BTOR2_TAG_justice:
-    case BTOR2_TAG_neg:
     case BTOR2_TAG_output:
     case BTOR2_TAG_read:
     case BTOR2_TAG_redxor:
     case BTOR2_TAG_rol:
     case BTOR2_TAG_ror:
     case BTOR2_TAG_saddo:
-    case BTOR2_TAG_sdiv:
     case BTOR2_TAG_sdivo:
-    case BTOR2_TAG_sext:
-    case BTOR2_TAG_sgt:
-    case BTOR2_TAG_sgte:
-    case BTOR2_TAG_sll:
-    case BTOR2_TAG_slt:
-    case BTOR2_TAG_slte:
     case BTOR2_TAG_smod:
     case BTOR2_TAG_smulo:
-    case BTOR2_TAG_sra:
-    case BTOR2_TAG_srem:
-    case BTOR2_TAG_srl:
     case BTOR2_TAG_ssubo:
     case BTOR2_TAG_uaddo:
-    case BTOR2_TAG_udiv:
     case BTOR2_TAG_umulo:
-    case BTOR2_TAG_urem:
     case BTOR2_TAG_usubo:
     case BTOR2_TAG_write:
     default:
@@ -383,6 +383,10 @@ simulate (int64_t id)
         assert (l->nargs == 0);
         res = btorsim_bv_consth (l->constant, l->sort.bitvec.width);
         break;
+      case BTOR2_TAG_dec:
+        assert (l->nargs == 1);
+        res = btorsim_bv_dec (args[0]);
+        break;
       case BTOR2_TAG_eq:
         assert (l->nargs == 2);
         res = btorsim_bv_eq (args[0], args[1]);
@@ -390,6 +394,10 @@ simulate (int64_t id)
       case BTOR2_TAG_implies:
         assert (l->nargs == 2);
         res = btorsim_bv_implies (args[0], args[1]);
+        break;
+      case BTOR2_TAG_inc:
+        assert (l->nargs == 1);
+        res = btorsim_bv_inc (args[0]);
         break;
       case BTOR2_TAG_ite:
         assert (l->nargs == 3);
@@ -402,6 +410,10 @@ simulate (int64_t id)
       case BTOR2_TAG_nand:
         assert (l->nargs == 2);
         res = btorsim_bv_nand (args[0], args[1]);
+        break;
+      case BTOR2_TAG_neg:
+        assert (l->nargs == 1);
+        res = btorsim_bv_neg (args[0]);
         break;
       case BTOR2_TAG_neq:
         assert (l->nargs == 2);
@@ -437,7 +449,6 @@ simulate (int64_t id)
         assert (l->nargs == 2);
         res = btorsim_bv_sub (args[0], args[1]);
         break;
-        break;
       case BTOR2_TAG_uext:
         assert (l->nargs == 1);
         {
@@ -449,6 +460,42 @@ simulate (int64_t id)
           else
             res = btorsim_bv_copy (args[0]);
         }
+        break;
+      case BTOR2_TAG_udiv:
+        assert (l->nargs == 2);
+        res = btorsim_bv_udiv (args[0], args[1]);
+        break;
+      case BTOR2_TAG_sdiv:
+        assert (l->nargs == 2);
+        res = btorsim_bv_sdiv (args[0], args[1]);
+        break;
+      case BTOR2_TAG_sext:
+        assert (l->nargs == 1);
+        {
+          uint32_t width = args[0]->width;
+          assert (width <= l->sort.bitvec.width);
+          uint32_t padding = l->sort.bitvec.width - width;
+          if (padding)
+            res = btorsim_bv_sext (args[0], padding);
+          else
+            res = btorsim_bv_copy (args[0]);
+        }
+        break;
+      case BTOR2_TAG_sll:
+        assert (l->nargs == 2);
+        res = btorsim_bv_sll (args[0], args[1]);
+        break;
+      case BTOR2_TAG_srl:
+        assert (l->nargs == 2);
+        res = btorsim_bv_srl (args[0], args[1]);
+        break;
+      case BTOR2_TAG_sra:
+        assert (l->nargs == 2);
+        res = btorsim_bv_sra (args[0], args[1]);
+        break;
+      case BTOR2_TAG_srem:
+        assert (l->nargs == 2);
+        res = btorsim_bv_srem (args[0], args[1]);
         break;
       case BTOR2_TAG_ugt:
         assert (l->nargs == 2);
@@ -466,6 +513,27 @@ simulate (int64_t id)
         assert (l->nargs == 2);
         res = btorsim_bv_ulte (args[0], args[1]);
         break;
+      case BTOR2_TAG_urem:
+        assert (l->nargs == 2);
+        res = btorsim_bv_urem (args[0], args[1]);
+        break;
+      case BTOR2_TAG_sgt:
+        assert (l->nargs == 2);
+        res = btorsim_bv_slt (args[1], args[0]);
+        break;
+      case BTOR2_TAG_sgte:
+        assert (l->nargs == 2);
+        res = btorsim_bv_slte (args[1], args[0]);
+        break;
+      case BTOR2_TAG_slt:
+        assert (l->nargs == 2);
+        res = btorsim_bv_slt (args[0], args[1]);
+        break;
+      case BTOR2_TAG_slte:
+        assert (l->nargs == 2);
+        res = btorsim_bv_slte (args[0], args[1]);
+        break;
+      case BTOR2_TAG_iff:
       case BTOR2_TAG_xnor:
         assert (l->nargs == 2);
         res = btorsim_bv_xnor (args[0], args[1]);
@@ -572,7 +640,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
         || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
         || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
-        || l->tag == BTOR2_TAG_justice)
+        || l->tag == BTOR2_TAG_justice || l->tag == BTOR2_TAG_output)
       continue;
 
     BtorSimBitVector *bv = simulate (i);
