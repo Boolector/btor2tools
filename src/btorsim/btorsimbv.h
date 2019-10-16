@@ -170,10 +170,19 @@ BtorSimBitVector *btorsim_bv_ult (const BtorSimBitVector *a,
 BtorSimBitVector *btorsim_bv_ulte (const BtorSimBitVector *a,
                                    const BtorSimBitVector *b);
 
+BtorSimBitVector *btorsim_bv_slt (const BtorSimBitVector *a,
+                                  const BtorSimBitVector *b);
+
+BtorSimBitVector *btorsim_bv_slte (const BtorSimBitVector *a,
+                                   const BtorSimBitVector *b);
+
 BtorSimBitVector *btorsim_bv_sll (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);
 
 BtorSimBitVector *btorsim_bv_srl (const BtorSimBitVector *a,
+                                  const BtorSimBitVector *b);
+
+BtorSimBitVector *btorsim_bv_sra (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);
 
 BtorSimBitVector *btorsim_bv_mul (const BtorSimBitVector *a,
@@ -182,7 +191,13 @@ BtorSimBitVector *btorsim_bv_mul (const BtorSimBitVector *a,
 BtorSimBitVector *btorsim_bv_udiv (const BtorSimBitVector *a,
                                    const BtorSimBitVector *b);
 
+BtorSimBitVector *btorsim_bv_sdiv (const BtorSimBitVector *a,
+                                   const BtorSimBitVector *b);
+
 BtorSimBitVector *btorsim_bv_urem (const BtorSimBitVector *a,
+                                   const BtorSimBitVector *b);
+
+BtorSimBitVector *btorsim_bv_srem (const BtorSimBitVector *a,
                                    const BtorSimBitVector *b);
 
 BtorSimBitVector *btorsim_bv_ite (const BtorSimBitVector *c,
