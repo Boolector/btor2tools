@@ -16,7 +16,7 @@ target_link_libraries(catbtor btor2parser)
 
 if(BUILD_BTOR2AIGER)
   add_executable(btor2aiger
-    btor2aiger/btor2aiger.cpp
+    btor2aiger.cpp
     ${CMAKE_SOURCE_DIR}/deps/aiger/aiger.c
   )
   target_include_directories(btor2aiger PRIVATE . ${CMAKE_SOURCE_DIR}/deps/aiger)
