@@ -19,13 +19,14 @@ Build
 From the Btor2Tools root directory configure and build as follows:
 ```
 ./configure.sh
+cd build
 make
 ```
 For more build configuration options of Btor2Tools, see `configure.sh -h`.
 
-All binaries (btorsim, catbtor) are generated into directory `btor2tools/bin`,
+All binaries (btorsim, catbtor) are generated into directory `build/bin`,
 and all libraries (libbtor2parser.a, libbtor2parser.so) are generated into
-directory `btor2tools/build`.
+directory `build/lib`.
 
 
 Usage
