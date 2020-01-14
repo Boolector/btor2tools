@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+
 #include "btor2parser/btor2parser.h"
 #include "btorsimbv.h"
 #include "btorsimrng.h"
@@ -30,12 +32,13 @@
 /*------------------------------------------------------------------------*/
 
 static void
-die (char *m, ...)
+die (std::string ms, ...)
 {
+  const char* m = ms.c_str();
   fflush (stdout);
   fputs ("*** 'btorsim' error: ", stderr);
   va_list ap;
-  va_start (ap, m);
+  va_start (ap, ms);
   vfprintf (stderr, m, ap);
   va_end (ap);
   fprintf (stderr, "\n");
@@ -46,13 +49,14 @@ static int32_t verbosity;
 static int32_t print_states;
 
 static void
-msg (int32_t level, char *m, ...)
+msg (int32_t level, std::string ms, ...)
 {
   if (level > verbosity) return;
+  const char* m = ms.c_str();
   assert (m);
   printf ("[btorsim] ");
   va_list ap;
-  va_start (ap, m);
+  va_start (ap, ms);
   vprintf (m, ap);
   va_end (ap);
   printf ("\n");

@@ -16,6 +16,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#if __cplusplus
+extern "C" {
+#endif
+
 #include "btorsimrng.h"
 #include "util/btor2stack.h"
 
@@ -228,5 +233,9 @@ bool btorsim_bv_is_umulo (const BtorSimBitVector *bv0,
                           const BtorSimBitVector *bv1);
 
 /*------------------------------------------------------------------------*/
+
+#if __cplusplus
+}
+#endif
 
 #endif
