@@ -4,12 +4,13 @@ add_library(btor2parser
 target_include_directories(btor2parser PRIVATE .)
 
 add_executable(btorsim
-  btorsim/btorsim.c
+  btorsim/btorsim.cpp
   btorsim/btorsimbv.c
   btorsim/btorsimrng.c
 )
 target_include_directories(btorsim PRIVATE .)
 target_link_libraries(btorsim btor2parser)
+target_compile_options(btorsim PRIVATE -Wall)
 
 add_executable(catbtor catbtor.c)
 target_link_libraries(catbtor btor2parser)
