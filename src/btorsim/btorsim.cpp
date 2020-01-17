@@ -31,13 +31,12 @@
 /*------------------------------------------------------------------------*/
 
 static void
-die (std::string ms, ...)
+die (const char* m, ...)
 {
-  const char* m = ms.c_str();
   fflush (stdout);
   fputs ("*** 'btorsim' error: ", stderr);
   va_list ap;
-  va_start (ap, ms);
+  va_start (ap, m);
   vfprintf (stderr, m, ap);
   va_end (ap);
   fprintf (stderr, "\n");
@@ -48,14 +47,13 @@ static int32_t verbosity;
 static int32_t print_states;
 
 static void
-msg (int32_t level, std::string ms, ...)
+msg (int32_t level, const char* m, ...)
 {
   if (level > verbosity) return;
-  const char* m = ms.c_str();
   assert (m);
   printf ("[btorsim] ");
   va_list ap;
-  va_start (ap, ms);
+  va_start (ap, m);
   vprintf (m, ap);
   va_end (ap);
   printf ("\n");
