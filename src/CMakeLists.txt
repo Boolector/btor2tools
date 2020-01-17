@@ -4,6 +4,8 @@ add_library(btor2parser
 target_include_directories(btor2parser PRIVATE .)
 
 add_executable(btorsim
+  btorsim/btorsimam.cpp
+  btorsim/btorsimstate.cpp
   btorsim/btorsim.cpp
   btorsim/btorsimbv.c
   btorsim/btorsimrng.c
