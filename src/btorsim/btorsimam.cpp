@@ -1,9 +1,11 @@
 #include "btorsimam.h"
 
+
+
 BtorSimBitVector* BtorSimArrayModel::read(const BtorSimBitVector* index)
 {
 	uint64_t i = btorsim_bv_to_uint64(index);
-	assert(i >= 0), assert(i < depth);
+	assert(i < depth);
 	//TODO: uninitialized data is assumed to be zero? what about random mode?
 	BtorSimBitVector* element = data[i];
 	return btorsim_bv_copy(element);
@@ -12,7 +14,7 @@ BtorSimBitVector* BtorSimArrayModel::read(const BtorSimBitVector* index)
 BtorSimArrayModel* BtorSimArrayModel::write(const BtorSimBitVector* index, const BtorSimBitVector* element)
 {
 	uint64_t i = btorsim_bv_to_uint64(index);
-	assert(i >=0), assert(i < depth);
+	assert(i < depth);
 	assert(element->width == width);
 	BtorSimArrayModel* res = copy();
 	res->data[i] = btorsim_bv_copy(element);
@@ -54,7 +56,6 @@ BtorSimBitVector* btorsim_am_eq(const BtorSimArrayModel* a, const BtorSimArrayMo
 
 	BtorSimBitVector* res = btorsim_bv_new(1);
 	btorsim_bv_set_bit (res, 0, bit);
-	assert (rem_bits_zero_dbg (res));
 	return res;
 }
 
@@ -68,7 +69,6 @@ BtorSimBitVector* btorsim_am_neq(const BtorSimArrayModel* a, const BtorSimArrayM
 
 	BtorSimBitVector* res = btorsim_bv_new(1);
 	btorsim_bv_set_bit (res, 0, bit);
-	assert (rem_bits_zero_dbg (res));
 	return res;
 }
 

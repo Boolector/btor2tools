@@ -18,9 +18,9 @@ void BtorSimState::update(BtorSimArrayModel *am)
 void BtorSimState::update(BtorSimState& s)
 {
 	if (s.is_array)
-		update(s.bv_state);
-	else
 		update(s.array_state);
+	else
+		update(s.bv_state);
 }
 
 void BtorSimState::remove()

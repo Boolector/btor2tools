@@ -12,7 +12,7 @@ add_executable(btorsim
 )
 target_include_directories(btorsim PRIVATE .)
 target_link_libraries(btorsim btor2parser)
-target_compile_options(btorsim PRIVATE -Wall -g -g3 -glldb -O0)
+target_compile_options(btorsim PRIVATE -Wall)
 
 add_executable(catbtor catbtor.c)
 target_link_libraries(catbtor btor2parser)
