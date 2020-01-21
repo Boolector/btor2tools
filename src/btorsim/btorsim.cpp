@@ -627,10 +627,12 @@ simulate (int64_t id)
         assert (l->nargs == 2);
         assert (!res.is_array), assert(args[0].is_array), assert(!args[1].is_array);
         res.bv_state = args[0].array_state->read(args[1].bv_state);
+        break;
       case BTOR2_TAG_write:
         assert (l->nargs == 3);
         assert (res.is_array), assert(args[0].is_array), assert(!args[1].is_array), assert(!args[1].is_array);
         res.array_state = args[0].array_state->write(args[1].bv_state, args[2].bv_state);
+        break;
       default:
         die ("can not randomly simulate operator '%s' at line %" PRId64,
              l->name,
@@ -642,14 +644,14 @@ simulate (int64_t id)
   }
   if (res.is_array)
   {
-    res.update(res.array_state->copy());
+    res.array_state = res.array_state->copy();
   }
   else
   {
     if (sign < 0)
-      res.update(btorsim_bv_not (res.bv_state));
+      res.bv_state = btorsim_bv_not (res.bv_state);
     else
-      res.update(btorsim_bv_copy (res.bv_state));
+      res.bv_state = btorsim_bv_copy (res.bv_state);
   }
   return res;
 }
@@ -849,7 +851,10 @@ transition (int64_t k)
     BtorSimState update = next_state[state->id];
     assert (update.is_set());
     update_current_state (state->id, update);
-    next_state[state->id].remove();
+    if (next_state[state->id].is_array)
+        next_state[state->id].array_state = nullptr;
+    else
+        next_state[state->id].bv_state = nullptr;
     if (print_trace && print_states && !update.is_array)
     {
       printf ("%lu ", i);
