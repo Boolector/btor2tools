@@ -1,14 +1,16 @@
 #include "btorsimbv.h"
 #include "btorsimam.h"
 
+enum BtorSimStateType {INVALID, BITVEC, ARRAY};
+
 struct BtorSimState {
-	bool is_array;
+	BtorSimStateType type;
 	union {
 		BtorSimBitVector *bv_state;
 		BtorSimArrayModel *array_state;
 	};
 
-	BtorSimState(): is_array(false), bv_state(nullptr) {};
+	BtorSimState(): type(INVALID), bv_state(nullptr) {};
 	void update(BtorSimBitVector *bv);
 	void update(BtorSimArrayModel *bv);
 	void update(BtorSimState& s);
