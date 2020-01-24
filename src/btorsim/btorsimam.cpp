@@ -1,15 +1,22 @@
 #include <cassert>
 #include "btorsimam.h"
 
-
+BtorSimArrayModel::~BtorSimArrayModel()
+{
+	for (auto i: data)
+	{
+		btorsim_bv_free(i.second);
+		data[i.first] = nullptr;
+	}
+}
 
 BtorSimBitVector* BtorSimArrayModel::read(const BtorSimBitVector* index)
 {
 	uint64_t i = btorsim_bv_to_uint64(index);
 	assert(i < depth);
 	//TODO: uninitialized data is assumed to be zero? what about random mode?
-	BtorSimBitVector* element = data[i];
-	return btorsim_bv_copy(element);
+	if (!data[i]) data[i] = btorsim_bv_new(width);
+	return btorsim_bv_copy(data[i]);
 }
 
 BtorSimArrayModel* BtorSimArrayModel::write(const BtorSimBitVector* index, const BtorSimBitVector* element)
@@ -18,8 +25,19 @@ BtorSimArrayModel* BtorSimArrayModel::write(const BtorSimBitVector* index, const
 	assert(i < depth);
 	assert(element->width == width);
 	BtorSimArrayModel* res = copy();
+	if (res->data[i]) btorsim_bv_free(res->data[i]);
 	res->data[i] = btorsim_bv_copy(element);
 	return res;
+}
+
+BtorSimBitVector* BtorSimArrayModel::check(const BtorSimBitVector* index) const
+{
+	uint64_t i = btorsim_bv_to_uint64(index);
+	assert(i < depth);
+	if (data.find(i) != data.end())
+		return btorsim_bv_copy(data.at(i));
+	else
+		return nullptr;
 }
 
 BtorSimArrayModel* BtorSimArrayModel::copy() const

@@ -26,11 +26,13 @@ struct BtorSimArrayModel {
 	std::map<uint64_t, BtorSimBitVector*> data;
 
 	BtorSimArrayModel(uint64_t width, uint64_t depth) : width(width), depth(depth) {};
+	~BtorSimArrayModel();
 	BtorSimArrayModel(const BtorSimArrayModel&) = delete;
 	BtorSimArrayModel& operator=(const BtorSimArrayModel&) = delete;
 
 	BtorSimBitVector* read(const BtorSimBitVector* index);
 	BtorSimArrayModel* write(const BtorSimBitVector* index, const BtorSimBitVector* element);
+	BtorSimBitVector* check(const BtorSimBitVector* index) const;
 	BtorSimArrayModel* copy() const;
 	bool operator!=(const BtorSimArrayModel& other) const;
 	bool operator==(const BtorSimArrayModel& other) const;

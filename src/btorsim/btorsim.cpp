@@ -327,7 +327,7 @@ static void
 update_current_state (int64_t id, BtorSimBitVector *bv)
 {
   assert (0 <= id), assert (id < num_format_lines);
-  msg (4, "updating state %" PRId64, id);
+  msg (5, "updating state %" PRId64, id);
   current_state[id].update(bv);
 }
 
@@ -335,7 +335,7 @@ static void
 update_current_state (int64_t id, BtorSimArrayModel *am)
 {
   assert (0 <= id), assert (id < num_format_lines);
-  msg (4, "updating state %" PRId64, id);
+  msg (5, "updating state %" PRId64, id);
   current_state[id].update(am);
 }
 
@@ -343,7 +343,7 @@ static void
 update_current_state (int64_t id, BtorSimState& s)
 {
   assert (0 <= id), assert (id < num_format_lines);
-  msg (4, "updating state %" PRId64, id);
+  msg (5, "updating state %" PRId64, id);
   current_state[id].update(s);
 }
 
@@ -669,8 +669,7 @@ initialize_inputs (int64_t k, int32_t randomize)
   for (size_t i = 0; i < inputs.size(); i++)
   {
     Btor2Line *input = inputs[i];
-    //TODO: just ignore inputs? also for arrays?
-    if (current_state[input->id].is_set()) continue;
+    if (current_state[input->id].is_set()) continue; //this means it was set previously by parse_input_part
     if (input->sort.tag == BTOR2_TAG_SORT_bitvec)
     {
       uint32_t width   = input->sort.bitvec.width;
@@ -690,7 +689,18 @@ initialize_inputs (int64_t k, int32_t randomize)
     }
     else
     {
-      assert(false); //TODO
+      assert (input->sort.tag == BTOR2_TAG_SORT_array);
+      Btor2Line *li = btor2parser_get_line_by_id (model, input->sort.array.index);
+      Btor2Line *le = btor2parser_get_line_by_id (model, input->sort.array.element);
+      assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
+      assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
+      uint64_t width = le->sort.bitvec.width;
+      uint64_t depth = (1 << li->sort.bitvec.width);
+      BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
+      if (randomize) {
+        assert(false); // TODO
+      }
+      update_current_state(input->id, am);
     }
   }
 }
@@ -704,50 +714,65 @@ initialize_states (int32_t randomly)
   {
     Btor2Line *state = states[i];
     assert (0 <= state->id), assert (state->id < num_format_lines);
-    switch (current_state[state->id].type) {
-      case BITVEC:
-        assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
-        break;
-      case ARRAY:
-        assert (state->sort.tag == BTOR2_TAG_SORT_array);
-        break;
-      default:
-        die ("uninitialized state %" PRId64, state->id);
-    }
-    if (current_state[state->id].is_set()) continue;
+    if (current_state[state->id].is_set()) continue; // this means it was set in parse_state_part from witness
     Btor2Line *init = inits[state->id];
-    BtorSimState update;
-    if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
-      update.type = BITVEC;
-    else
-      update.type = ARRAY;
-
     if (init)
     {
       assert (init->nargs == 2);
       assert (init->args[0] == state->id);
-      update = simulate (init->args[1]);
+      BtorSimState update = simulate (init->args[1]);
+      update_current_state(state->id, update);
     }
     else
     {
-      if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
-      {
-        uint32_t width = state->sort.bitvec.width;
-        if (randomly)
-          update.bv_state = btorsim_bv_new_random (&rng, width);
-        else
-          update.bv_state = btorsim_bv_new (width);
+      switch (current_state[state->id].type) {
+        case BITVEC:
+          assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
+          BtorSimBitVector* bv;
+          if (randomly)
+            bv = btorsim_bv_new_random (&rng, state->sort.bitvec.width);
+          else
+            bv = btorsim_bv_new (state->sort.bitvec.width);
+          update_current_state (state->id, bv);
+          if (print_trace && !init)
+          {
+            printf ("%lu ", i);
+            btorsim_bv_print_without_new_line (bv);
+            if (state->symbol) printf (" %s#0", state->symbol);
+            fputc ('\n', stdout);
+          }
+          break;
+        case ARRAY:
+          assert (state->sort.tag == BTOR2_TAG_SORT_array);
+          {
+            Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
+            Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
+            assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
+            assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
+            uint64_t width = le->sort.bitvec.width;
+            uint64_t depth = (1 << li->sort.bitvec.width);
+            BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
+            if (randomly) {
+              assert(false); // TODO
+            }
+            update_current_state (state->id, am);
+            if (print_trace && !init)
+            {
+              for (auto e : am->data)
+              {
+                printf ("%lu [%lu]", i, e.first);
+                btorsim_bv_print_without_new_line (e.second);
+                if (state->symbol) printf (" %s#0", state->symbol);
+                fputc ('\n', stdout);
+              }
+            }
+          }
+          break;
+        default:
+          die ("uninitialized current_state %" PRId64, state->id);
       }
     }
-    update_current_state (state->id, update);
-    if (print_trace && !init && update.type == BITVEC)
-    //TODO: need to print array state updates?
-    {
-      printf ("%lu ", i);
-      btorsim_bv_print_without_new_line (update.bv_state);
-      if (state->symbol) printf (" %s#0", state->symbol);
-      fputc ('\n', stdout);
-    }
+
   }
 }
 
@@ -807,7 +832,8 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
         uint64_t width = le->sort.bitvec.width;
         uint64_t depth = (1 << li->sort.bitvec.width);
         update.array_state = new BtorSimArrayModel(width, depth);
-        //TODO: random mode?
+        if (randomize_states_that_are_inputs)
+          assert(false);//TODO
       }
     }
     assert (!next_state[state->id].is_set());
@@ -1102,9 +1128,8 @@ parse_assignment ()
   while ((ch = next_char ()) == '0' || ch == '1')
     BTOR2_PUSH_STACK (constant, ch);
   if (BTOR2_EMPTY_STACK (constant)) parse_error ("empty constant");
-  if (BTOR2_EMPTY_STACK (constant))
-    if (ch != ' ' && ch != '\n')
-      parse_error ("expected space or new-line after assignment");
+  else if (ch != ' ' && ch != '\n')
+    parse_error ("expected space or new-line after assignment");
   BTOR2_PUSH_STACK (constant, 0);
   BTOR2_RESET_STACK (symbol);
   while (ch != '\n')
@@ -1209,7 +1234,6 @@ parse_state_part (int64_t k)
       }
       if (!current_state[state->id].array_state)
         current_state[state->id].array_state = new BtorSimArrayModel(le->sort.bitvec.width, (1 << li->sort.bitvec.width));
-      //multiple writes (=updates) in one step are ok for arrays
     }
 
     BtorSimBitVector *idx = 0;
@@ -1219,6 +1243,7 @@ parse_state_part (int64_t k)
     Btor2Line *init       = inits[state->id];
     if (init && nexts[state->id])
     {
+      msg (4, "init & next for state %" PRId64, state->id);
       assert (init->nargs == 2);
       assert (init->args[0] == state->id);
       BtorSimState tmp = simulate (init->args[1]);
@@ -1228,26 +1253,50 @@ parse_state_part (int64_t k)
         if (btorsim_bv_compare (val, tmp.bv_state))
           parse_error (
               "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
-        btorsim_bv_free (tmp.bv_state);
       }
       else
       {
-        //TODO: how would this work for arrays?
-        assert(false);
+        assert(tmp.type == ARRAY);
+        BtorSimBitVector* element = tmp.array_state->check(idx);
+        if (element)
+        {
+          if (btorsim_bv_compare (val, element))
+          parse_error (
+              "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
+          btorsim_bv_free (element);
+        }
       }
+      tmp.remove();
     }
     lineno++;
     charno = saved_charno;
     if (k > 0 && nexts[state->id])
-      if(state->sort.tag == BTOR2_TAG_SORT_bitvec && btorsim_bv_compare (val, current_state[state->id].bv_state))
-      //TODO: || state->sort.tag == BTOR2_TAG_SORT_array && array_compare
+    {
+      if(state->sort.tag == BTOR2_TAG_SORT_bitvec)
       {
-        parse_error ("incompatible assignment for state %" PRId64 " id %" PRId64
-                     " in time frame %" PRId64,
-                     state_pos,
-                     state->id,
-                     k);
+        if (btorsim_bv_compare (val, current_state[state->id].bv_state))
+        {
+          parse_error ("incompatible assignment for state %" PRId64 " id %" PRId64
+                       " in time frame %" PRId64,
+                       state_pos,
+                       state->id,
+                       k);
+        }
       }
+      else
+      {
+        BtorSimBitVector * tmp = current_state[state->id].array_state->check(idx);
+        if (tmp && btorsim_bv_compare(val, tmp))
+        {
+          parse_error ("incompatible assignment for state %" PRId64 " id %" PRId64
+                       " in time frame %" PRId64,
+                       state_pos,
+                       state->id,
+                       k);
+        }
+        btorsim_bv_free(tmp);
+      }
+    }
     if(state->sort.tag == BTOR2_TAG_SORT_bitvec)
       update_current_state (state->id, val);
     else
@@ -1257,8 +1306,9 @@ parse_state_part (int64_t k)
       tmp.type = ARRAY;
       tmp.array_state = current_state[state->id].array_state->write(idx, val);
       update_current_state (state->id, tmp);
+      btorsim_bv_free(idx);
+      btorsim_bv_free(val);
     }
-
   }
   if (!k) found_initial_frame = 1;
 }
@@ -1278,37 +1328,64 @@ parse_input_part (int64_t k)
     lineno--;
     if (input_pos >= (int64_t) inputs.size())
       parse_error ("less than %" PRId64 " defined", input_pos);
-    assert(BTOR2_EMPTY_STACK (array_index));
-    if (BTOR2_EMPTY_STACK (symbol))
-      msg (4,
-           "input assignment '%" PRId64 " %s' at time frame %" PRId64,
-           input_pos,
-           constant.start,
-           k);
-    else
-      msg (4,
-           "input assignment '%" PRId64 " %s %s' at time frame %" PRId64,
-           input_pos,
-           constant.start,
-           symbol.start,
-           k);
+    if (BTOR2_EMPTY_STACK (array_index))
+      if (BTOR2_EMPTY_STACK (symbol))
+        msg (4,
+             "input assignment '%" PRId64 " %s' at time frame %" PRId64,
+             input_pos,
+             constant.start,
+             k);
+      else
+        msg (4,
+             "input assignment '%" PRId64 " %s %s' at time frame %" PRId64,
+             input_pos,
+             constant.start,
+             symbol.start,
+             k);
+   else
+     if (BTOR2_EMPTY_STACK (symbol))
+       msg (4,
+            "input assignment '%" PRId64 " [%s] %s' at time frame %" PRId64,
+            input_pos,
+            array_index.start,
+            constant.start,
+            k);
+     else
+       msg (4,
+            "input assignment '%" PRId64 " [%s] %s %s' at time frame %" PRId64,
+            input_pos,
+            array_index.start,
+            constant.start,
+            symbol.start,
+            k);
     Btor2Line *input = inputs[input_pos];
     assert (input);
-    // TODO: array inputs
-    assert (current_state[input->id].type == BITVEC);
-    if (strlen (constant.start) != input->sort.bitvec.width)
-      charno = constant_columno,
-      parse_error ("expected constant of width '%u'", input->sort.bitvec.width);
-    assert (0 <= input->id), assert (input->id < num_format_lines);
-    if (current_state[input->id].bv_state)
-      parse_error ("input %" PRId64 " id %" PRId64 " assigned twice in frame %" PRId64,
-                   input_pos,
-                   input->id,
-                   k);
-    BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
-    lineno++;
-    charno = saved_charno;
-    update_current_state (input->id, val);
+    if (current_state[input->id].type == BITVEC)
+    {
+      if (strlen (constant.start) != input->sort.bitvec.width)
+        charno = constant_columno,
+        parse_error ("expected constant of width '%u'", input->sort.bitvec.width);
+      assert (0 <= input->id), assert (input->id < num_format_lines);
+      if (current_state[input->id].bv_state)
+        parse_error ("input %" PRId64 " id %" PRId64 " assigned twice in frame %" PRId64,
+                     input_pos,
+                     input->id,
+                     k);
+      BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
+      lineno++;
+      charno = saved_charno;
+      update_current_state (input->id, val);
+    }
+    else
+    {
+      assert(current_state[input->id].type == ARRAY);
+      BtorSimBitVector *idx = btorsim_bv_char_to_bv (array_index.start);
+      BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
+      lineno++;
+      charno = saved_charno;
+      BtorSimArrayModel* am = current_state[input->id].array_state->write(idx, val);
+      update_current_state (input->id, am);
+    }
   }
 }
 
@@ -1482,11 +1559,13 @@ parse_and_check_all_witnesses ()
 {
   BTOR2_INIT_STACK (constant);
   BTOR2_INIT_STACK (symbol);
+  BTOR2_INIT_STACK (array_index);
   assert (witness_file);
   while (parse_and_check_witness ())
     ;
   BTOR2_RELEASE_STACK (constant);
   BTOR2_RELEASE_STACK (symbol);
+  BTOR2_RELEASE_STACK (array_index);
   msg (1,
        "finished parsing %" PRId64 " witnesses after reading %" PRId64 " bytes (%.1f MB)",
        count_witnesses,
@@ -1508,12 +1587,10 @@ void setup_states ()
         case BTOR2_TAG_SORT_bitvec:
           current_state[i].type = BITVEC;
           next_state[i].type = BITVEC;
-          msg (4, "state %" PRId64 ": bitvec", i);
           break;
         case BTOR2_TAG_SORT_array:
           current_state[i].type = ARRAY;
           next_state[i].type = ARRAY;
-          msg (4, "state %" PRId64 ": array", i);
           break;
         default:
           die ("Unknown sort");
