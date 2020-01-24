@@ -10,7 +10,7 @@ void BtorSimState::update(BtorSimBitVector *bv)
 
 void BtorSimState::update(BtorSimArrayModel *am)
 {
-	assert(type == BtorSimStateType::ARRAY);
+	assert(type == ARRAY);
 	if (array_state) delete array_state;
 	array_state = am;
 }
@@ -19,10 +19,10 @@ void BtorSimState::update(BtorSimState& s)
 {
 	switch (type)
 	{
-	case BtorSimStateType::ARRAY:
+	case ARRAY:
 		update(s.array_state);
 		break;
-	case BtorSimStateType::BITVEC:
+	case BITVEC:
 		update(s.bv_state);
 		break;
 	default:
@@ -35,11 +35,11 @@ void BtorSimState::remove()
 {
 	switch (type)
 	{
-	case BtorSimStateType::ARRAY:
+	case ARRAY:
 		if (array_state) delete array_state;
 		array_state = nullptr;
 		break;
-	case BtorSimStateType::BITVEC:
+	case BITVEC:
 		if (bv_state) btorsim_bv_free(bv_state);
 		bv_state = nullptr;
 		break;
@@ -53,10 +53,10 @@ bool BtorSimState::is_set()
 {
 	switch (type)
 	{
-	case BtorSimStateType::ARRAY:
+	case ARRAY:
 		return array_state != nullptr;
-	case BtorSimStateType::BITVEC:
-		return bv_state != nullptr;\
+	case BITVEC:
+		return bv_state != nullptr;
 	default:
 		fprintf (stderr, "*** 'btorsim' error: Checking invalid state!\n");
 		exit (1);
