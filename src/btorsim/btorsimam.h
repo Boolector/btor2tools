@@ -22,14 +22,17 @@
 struct BtorSimArrayModel {
 	uint64_t width;
 	uint64_t depth;
+	uint64_t random_seed;
 
 	std::map<uint64_t, BtorSimBitVector*> data;
 
-	BtorSimArrayModel(uint64_t width, uint64_t depth) : width(width), depth(depth) {};
+	BtorSimArrayModel(uint64_t width, uint64_t depth) : width(width), depth(depth), random_seed(0) {};
+	BtorSimArrayModel(uint64_t width, uint64_t depth, uint64_t random_seed) : width(width), depth(depth), random_seed(random_seed) {};
 	~BtorSimArrayModel();
 	BtorSimArrayModel(const BtorSimArrayModel&) = delete;
 	BtorSimArrayModel& operator=(const BtorSimArrayModel&) = delete;
 
+	uint64_t get_random_init(uint64_t idx) const;
 	BtorSimBitVector* read(const BtorSimBitVector* index);
 	BtorSimArrayModel* write(const BtorSimBitVector* index, const BtorSimBitVector* element);
 	BtorSimBitVector* check(const BtorSimBitVector* index) const;

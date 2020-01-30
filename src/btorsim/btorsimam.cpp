@@ -10,12 +10,23 @@ BtorSimArrayModel::~BtorSimArrayModel()
 	}
 }
 
+uint64_t BtorSimArrayModel::get_random_init(uint64_t idx) const
+{
+	return (random_seed + idx)*(random_seed + idx + 1)/2 + idx;
+}
+
 BtorSimBitVector* BtorSimArrayModel::read(const BtorSimBitVector* index)
 {
 	uint64_t i = btorsim_bv_to_uint64(index);
 	assert(i < depth);
 	//TODO: uninitialized data is assumed to be zero? what about random mode?
-	if (!data[i]) data[i] = btorsim_bv_new(width);
+	if (!data[i])
+	{
+		if (random_seed)
+			data[i] = btorsim_bv_uint64_to_bv (get_random_init(i), width);
+		else
+			data[i] = btorsim_bv_new(width);
+	}
 	return btorsim_bv_copy(data[i]);
 }
 

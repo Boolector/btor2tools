@@ -698,9 +698,19 @@ initialize_inputs (int64_t k, int32_t randomize)
       uint64_t depth = (1 << li->sort.bitvec.width);
       BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
       if (randomize) {
-        assert(false); // TODO
+        am->random_seed = btorsim_rng_rand(&rng);
       }
       update_current_state(input->id, am);
+      if (print_trace)
+      {
+        for (auto e : am->data)
+        {
+          printf ("%lu [%lu]", i, e.first);
+          btorsim_bv_print_without_new_line (e.second);
+          if (input->symbol) printf (" %s@%" PRId64, input->symbol, k);
+          fputc ('\n', stdout);
+        }
+      }
     }
   }
 }
@@ -753,7 +763,7 @@ initialize_states (int32_t randomly)
             uint64_t depth = (1 << li->sort.bitvec.width);
             BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
             if (randomly) {
-              assert(false); // TODO
+              am->random_seed = btorsim_rng_rand(&rng);
             }
             update_current_state (state->id, am);
             if (print_trace && !init)
@@ -833,7 +843,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
         uint64_t depth = (1 << li->sort.bitvec.width);
         update.array_state = new BtorSimArrayModel(width, depth);
         if (randomize_states_that_are_inputs)
-          assert(false);//TODO
+          update.array_state->random_seed = btorsim_rng_rand(&rng);
       }
     }
     assert (!next_state[state->id].is_set());
@@ -904,12 +914,25 @@ transition (int64_t k)
       default:
         die ("Invalid state type");
     }
-    if (print_trace && print_states && update.type == BITVEC)
+    if (print_trace && print_states)
     {
-      printf ("%lu ", i);
-      btorsim_bv_print_without_new_line (update.bv_state);
-      if (state->symbol) printf (" %s#%" PRId64, state->symbol, k);
-      fputc ('\n', stdout);
+      if (update.type == BITVEC)
+      {
+        printf ("%lu ", i);
+        btorsim_bv_print_without_new_line (update.bv_state);
+        if (state->symbol) printf (" %s#%" PRId64, state->symbol, k);
+        fputc ('\n', stdout);
+      }
+      else
+      {
+        for (auto e : update.array_state->data)
+        {
+          printf ("%lu [%lu]", i, e.first);
+          btorsim_bv_print_without_new_line (e.second);
+          if (state->symbol) printf (" %s#%" PRId64, state->symbol, k);
+          fputc ('\n', stdout);
+        }
+      }
     }
   }
 }
@@ -1233,7 +1256,10 @@ parse_state_part (int64_t k)
         parse_error ("expected element of width '%u'", state->sort.array.element);
       }
       if (!current_state[state->id].array_state)
+      {
         current_state[state->id].array_state = new BtorSimArrayModel(le->sort.bitvec.width, (1 << li->sort.bitvec.width));
+      }
+      assert(current_state[state->id].array_state);
     }
 
     BtorSimBitVector *idx = 0;
