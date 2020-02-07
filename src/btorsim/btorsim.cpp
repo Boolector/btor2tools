@@ -740,6 +740,7 @@ initialize_inputs (int64_t k, int32_t randomize)
       }
       else
       {
+<<<<<<< HEAD
         assert (input->sort.tag == BTOR2_TAG_SORT_array);
         Btor2Line *li = btor2parser_get_line_by_id (model, input->sort.array.index);
         Btor2Line *le = btor2parser_get_line_by_id (model, input->sort.array.element);
@@ -750,6 +751,14 @@ initialize_inputs (int64_t k, int32_t randomize)
         BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
         if (randomize) {
           am->random_seed = btorsim_rng_rand(&rng);
+=======
+        for (auto e : am->data)
+        {
+          printf ("%lu [%" PRId64 "]", i, e.first);
+          btorsim_bv_print_without_new_line (e.second);
+          if (input->symbol) printf (" %s@%" PRId64, input->symbol, k);
+          fputc ('\n', stdout);
+>>>>>>> 73abc27... print array index in hex to match yosys-smtbmc traces
         }
         update_current_state(input->id, am);
       }
@@ -793,6 +802,7 @@ initialize_states (int32_t randomly)
           case ARRAY:
             assert (state->sort.tag == BTOR2_TAG_SORT_array);
             {
+<<<<<<< HEAD
               Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
               Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
               assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
@@ -802,6 +812,14 @@ initialize_states (int32_t randomly)
               BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
               if (randomly) {
                 am->random_seed = btorsim_rng_rand(&rng);
+=======
+              for (auto e : am->data)
+              {
+                printf ("%lu [%" PRId64 "]", i, e.first);
+                btorsim_bv_print_without_new_line (e.second);
+                if (state->symbol) printf (" %s#0", state->symbol);
+                fputc ('\n', stdout);
+>>>>>>> 73abc27... print array index in hex to match yosys-smtbmc traces
               }
               update_current_state (state->id, am);
             }
@@ -1067,7 +1085,30 @@ transition (int64_t k)
       default:
         die ("Invalid state type");
     }
+<<<<<<< HEAD
     if (print_trace && print_states) print_state_or_input(state->id, i, k, false);
+=======
+    if (print_trace && print_states)
+    {
+      if (update.type == BITVEC)
+      {
+        printf ("%lu ", i);
+        btorsim_bv_print_without_new_line (update.bv_state);
+        if (state->symbol) printf (" %s#%" PRId64, state->symbol, k);
+        fputc ('\n', stdout);
+      }
+      else
+      {
+        for (auto e : update.array_state->data)
+        {
+          printf ("%lu [%" PRId64 "]", i, e.first);
+          btorsim_bv_print_without_new_line (e.second);
+          if (state->symbol) printf (" %s#%" PRId64, state->symbol, k);
+          fputc ('\n', stdout);
+        }
+      }
+    }
+>>>>>>> 73abc27... print array index in hex to match yosys-smtbmc traces
   }
 }
 
@@ -1783,7 +1824,7 @@ void write_vcd ()
     assert(l->sort.tag == BTOR2_TAG_SORT_array);
     assert(l->symbol);
     Btor2Line *le = btor2parser_get_line_by_id (model, l->sort.array.element);
-    vcd_file << "$var wire " << le->sort.bitvec.width << " " << i.second << " " << l->symbol << "<" << idx << "> $end\n";
+    vcd_file << "$var wire " << le->sort.bitvec.width << " " << i.second << " " << l->symbol << "<" << std::hex << idx << std::dec << "> $end\n";
   }
   vcd_file << "$enddefinitions $end\n";
 
