@@ -714,7 +714,7 @@ initialize_inputs (int64_t k, int32_t randomize)
       {
         for (auto e : am->data)
         {
-          printf ("%lu [%lu]", i, e.first);
+          printf ("%lu [%" PRId64 "]", i, e.first);
           btorsim_bv_print_without_new_line (e.second);
           if (input->symbol) printf (" %s@%" PRId64, input->symbol, k);
           fputc ('\n', stdout);
@@ -779,7 +779,7 @@ initialize_states (int32_t randomly)
             {
               for (auto e : am->data)
               {
-                printf ("%lu [%lu]", i, e.first);
+                printf ("%lu [%" PRId64 "]", i, e.first);
                 btorsim_bv_print_without_new_line (e.second);
                 if (state->symbol) printf (" %s#0", state->symbol);
                 fputc ('\n', stdout);
@@ -1059,7 +1059,7 @@ transition (int64_t k)
       {
         for (auto e : update.array_state->data)
         {
-          printf ("%lu [%lu]", i, e.first);
+          printf ("%lu [%" PRId64 "]", i, e.first);
           btorsim_bv_print_without_new_line (e.second);
           if (state->symbol) printf (" %s#%" PRId64, state->symbol, k);
           fputc ('\n', stdout);
@@ -1789,7 +1789,7 @@ void write_vcd ()
     assert(l->sort.tag == BTOR2_TAG_SORT_array);
     assert(l->symbol);
     Btor2Line *le = btor2parser_get_line_by_id (model, l->sort.array.element);
-    vcd_file << "$var wire " << le->sort.bitvec.width << " " << i.second << " " << l->symbol << "<" << idx << "> $end\n";
+    vcd_file << "$var wire " << le->sort.bitvec.width << " " << i.second << " " << l->symbol << "<" << std::hex << idx << std::dec << "> $end\n";
   }
   vcd_file << "$enddefinitions $end\n";
 
