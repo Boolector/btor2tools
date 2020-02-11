@@ -61,6 +61,15 @@ msg (int32_t level, const char* m, ...)
   printf ("\n");
 }
 
+// this would ideally be in btorsimbv.c but that's C and doesn't know std::string
+std::string btorsim_bv_to_string (const BtorSimBitVector *bv)
+{
+  std::string sval("");
+  for (int j = bv->width - 1; j >= 0; j--)
+    sval += std::to_string(btorsim_bv_get_bit (bv, j));
+  return sval;
+}
+
 static const char *usage =
     "usage: btorsim [ <option> ... ] [ <btor> [ <witness> ] ]\n"
     "\n"
@@ -660,11 +669,15 @@ simulate (int64_t id)
         assert (l->nargs == 2);
         assert (res.type == BITVEC), assert(args[0].type == ARRAY), assert(args[1].type == BITVEC);
         res.bv_state = args[0].array_state->read(args[1].bv_state);
+        {Btor2Line *mem = btor2parser_get_line_by_id (model, l->args[0]);
+        msg (4, "read %s[%s] -> %s", mem->symbol ? mem->symbol : std::to_string(mem->id).c_str(), btorsim_bv_to_string(args[1].bv_state).c_str(), btorsim_bv_to_string(res.bv_state).c_str());}
         break;
       case BTOR2_TAG_write:
         assert (l->nargs == 3);
         assert (res.type == ARRAY), assert(args[0].type == ARRAY), assert(args[1].type == BITVEC), assert(args[2].type == BITVEC);
         res.array_state = args[0].array_state->write(args[1].bv_state, args[2].bv_state);
+        {Btor2Line *mem = btor2parser_get_line_by_id (model, l->args[0]);
+        msg (4, "write %s[%s] <- %s", mem->symbol ? mem->symbol : std::to_string(mem->id).c_str(), btorsim_bv_to_string(args[1].bv_state).c_str(), btorsim_bv_to_string(args[2].bv_state).c_str());}
         break;
       default:
         die ("can not randomly simulate operator '%s' at line %" PRId64,
@@ -910,8 +923,7 @@ static void add_value_changes( int64_t k)
           std::string sval("");
           if (current_state[i].bv_state->width > 1)
             sval += "b";
-          for (int j = current_state[i].bv_state->width - 1; j >= 0; j--)
-            sval += std::to_string(btorsim_bv_get_bit (current_state[i].bv_state, j));
+          sval += btorsim_bv_to_string(current_state[i].bv_state);
           if (current_state[i].bv_state->width >1 ) sval += " ";
           value_changes.push_back(sval + get_bv_identifier(i));
           prev_value[i].update(btorsim_bv_copy(current_state[i].bv_state));
@@ -938,8 +950,7 @@ static void add_value_changes( int64_t k)
             {
               std::string sval("");
               if (it.second->width > 1 ) sval += "b";
-              for (int j = it.second->width - 1; j >= 0; j--)
-                sval += std::to_string(btorsim_bv_get_bit (it.second, j));
+              sval += btorsim_bv_to_string(it.second);
               if (it.second->width > 1 ) sval += " ";
               value_changes.push_back(sval + get_am_identifier(i, it.first));
             }

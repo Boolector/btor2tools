@@ -19,7 +19,6 @@ BtorSimBitVector* BtorSimArrayModel::read(const BtorSimBitVector* index)
 {
 	uint64_t i = btorsim_bv_to_uint64(index);
 	assert(i < depth);
-	//TODO: uninitialized data is assumed to be zero? what about random mode?
 	if (!data[i])
 	{
 		if (random_seed)
