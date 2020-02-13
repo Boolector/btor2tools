@@ -585,12 +585,12 @@ simulate (int64_t id)
       case BTOR2_TAG_ugt:
         assert (l->nargs == 2);
         assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
-        res.bv_state = btorsim_bv_ult (args[0].bv_state, args[1].bv_state);
+        res.bv_state = btorsim_bv_ult (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_ugte:
         assert (l->nargs == 2);
         assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
-        res.bv_state = btorsim_bv_ulte (args[0].bv_state, args[1].bv_state);
+        res.bv_state = btorsim_bv_ulte (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_ult:
         assert (l->nargs == 2);
@@ -610,12 +610,12 @@ simulate (int64_t id)
       case BTOR2_TAG_sgt:
         assert (l->nargs == 2);
         assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
-        res.bv_state = btorsim_bv_slt (args[0].bv_state, args[1].bv_state);
+        res.bv_state = btorsim_bv_slt (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_sgte:
         assert (l->nargs == 2);
         assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
-        res.bv_state = btorsim_bv_slte (args[0].bv_state, args[1].bv_state);
+        res.bv_state = btorsim_bv_slte (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_slt:
         assert (l->nargs == 2);
