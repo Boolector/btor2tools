@@ -354,6 +354,29 @@ delete_current_state (int64_t id)
   if (current_state[id].type) current_state[id].remove();
 }
 
+static Btor2Sort *get_sort(Btor2Line* l)
+{
+  Btor2Sort *sort;
+  switch (l->tag) {
+    case BTOR2_TAG_output:
+    case BTOR2_TAG_bad:
+    case BTOR2_TAG_constraint:
+    case BTOR2_TAG_fair:
+    // case BTOR2_TAG_justice:
+      {
+        Btor2Line *ls = btor2parser_get_line_by_id (model, l->args[0]);
+        sort = &(ls->sort);
+      }
+      break;
+    default:
+      sort = &(l->sort);
+      break;
+  }
+  assert(sort);
+  assert(sort->id);
+  return sort;
+}
+
 static BtorSimState
 simulate (int64_t id)
 {
@@ -1600,7 +1623,8 @@ void setup_states ()
     Btor2Line *l = btor2parser_get_line_by_id (model, i);
     if (l)
     {
-      switch (l->sort.tag) {
+      Btor2Sort *sort = get_sort(l);
+      switch (sort->tag) {
         case BTOR2_TAG_SORT_bitvec:
           current_state[i].type = BITVEC;
           next_state[i].type = BITVEC;
