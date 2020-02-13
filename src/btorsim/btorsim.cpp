@@ -372,6 +372,29 @@ delete_current_state (int64_t id)
   if (current_state[id].type) current_state[id].remove();
 }
 
+static Btor2Sort *get_sort(Btor2Line* l)
+{
+  Btor2Sort *sort;
+  switch (l->tag) {
+    case BTOR2_TAG_output:
+    case BTOR2_TAG_bad:
+    case BTOR2_TAG_constraint:
+    case BTOR2_TAG_fair:
+    // case BTOR2_TAG_justice:
+      {
+        Btor2Line *ls = btor2parser_get_line_by_id (model, l->args[0]);
+        sort = &(ls->sort);
+      }
+      break;
+    default:
+      sort = &(l->sort);
+      break;
+  }
+  assert(sort);
+  assert(sort->id);
+  return sort;
+}
+
 static BtorSimState
 simulate (int64_t id)
 {
@@ -656,6 +679,15 @@ simulate (int64_t id)
         {Btor2Line *mem = btor2parser_get_line_by_id (model, l->args[0]);
         msg (4, "write %s[%s] <- %s", mem->symbol ? mem->symbol : std::to_string(mem->id).c_str(), btorsim_bv_to_string(args[1].bv_state).c_str(), btorsim_bv_to_string(args[2].bv_state).c_str());}
         break;
+      case BTOR2_TAG_output:
+        assert (l->nargs == 1);
+        assert (res.type == args[0].type);
+        if (res.type == ARRAY) {
+          res.array_state = args[0].array_state->copy();
+        } else {
+          res.bv_state = btorsim_bv_copy (args[0].bv_state);
+        }
+        break;
       default:
         die ("can not randomly simulate operator '%s' at line %" PRId64,
              l->name,
@@ -861,11 +893,12 @@ static void add_value_changes( int64_t k)
     if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
         || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
         || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
-        || l->tag == BTOR2_TAG_justice || l->tag == BTOR2_TAG_output)
+        || l->tag == BTOR2_TAG_justice)
       continue; // TODO: can init and next have symbols?
     if (!l->symbol) continue;
-    if (l->symbol[0] == '$') continue;
-    switch (l->sort.tag)
+    if (l->symbol[0] == '$') continue; // TODO: a bit hacky
+    Btor2Sort *sort = get_sort(l);
+    switch (sort->tag)
     {
       case BTOR2_TAG_SORT_bitvec:
       {
@@ -938,7 +971,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
         || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
         || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
-        || l->tag == BTOR2_TAG_justice || l->tag == BTOR2_TAG_output)
+        || l->tag == BTOR2_TAG_justice)
       continue;
 
     BtorSimState s = simulate (i);
@@ -1745,7 +1778,8 @@ void setup_states ()
     Btor2Line *l = btor2parser_get_line_by_id (model, i);
     if (l)
     {
-      switch (l->sort.tag) {
+      Btor2Sort *sort = get_sort(l);
+      switch (sort->tag) {
         case BTOR2_TAG_SORT_bitvec:
           current_state[i].type = BITVEC;
           next_state[i].type = BITVEC;
@@ -1779,8 +1813,9 @@ void write_vcd ()
     Btor2Line *l = btor2parser_get_line_by_id (model, i.first);
     assert(l);
     assert(l->symbol);
-    assert(l->sort.tag == BTOR2_TAG_SORT_bitvec);
-    vcd_file << "$var wire " << l->sort.bitvec.width << " " << i.second << " " << l->symbol << " $end\n";
+    Btor2Sort *sort = get_sort(l);
+    assert(sort->tag == BTOR2_TAG_SORT_bitvec);
+    vcd_file << "$var wire " << sort->bitvec.width << " " << i.second << " " << l->symbol << " $end\n";
   }
   for (auto i : am_identifiers)
   {
@@ -1788,9 +1823,10 @@ void write_vcd ()
     int64_t idx = i.first.second;
     Btor2Line *l = btor2parser_get_line_by_id (model, id);
     assert(l);
-    assert(l->sort.tag == BTOR2_TAG_SORT_array);
     assert(l->symbol);
-    Btor2Line *le = btor2parser_get_line_by_id (model, l->sort.array.element);
+    Btor2Sort *sort = get_sort(l);
+    assert(sort->tag == BTOR2_TAG_SORT_array);
+    Btor2Line *le = btor2parser_get_line_by_id (model, sort->array.element);
     vcd_file << "$var wire " << le->sort.bitvec.width << " " << i.second << " " << l->symbol << "<" << std::hex << idx << std::dec << "> $end\n";
   }
   vcd_file << "$enddefinitions $end\n";
