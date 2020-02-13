@@ -1168,23 +1168,14 @@ static void
 parse_state_part (int64_t k)
 {
   int32_t ch = next_char ();
-  if (k == 0)
+  if (ch != '#')
   {
-    if (ch != '#' || parse_unsigned_number (&ch) != k || ch != '\n')
-      parse_error (
-          "missing '#%" PRId64 "' state part header of frame %" PRId64, k, k);
+    prev_char (ch);
+    return;
   }
-  else
-  {
-    if (ch != '#')
-    {
-      prev_char (ch);
-      return;
-    }
-    if (parse_unsigned_number (&ch) != k || ch != '\n')
-      parse_error (
-          "missing '#%" PRId64 "' state part header of frame %" PRId64, k, k);
-  }
+  if (parse_unsigned_number (&ch) != k || ch != '\n')
+    parse_error (
+        "missing '#%" PRId64 "' state part header of frame %" PRId64, k, k);
   int64_t state_pos;
   while ((state_pos = parse_assignment ()) >= 0)
   {
@@ -1473,7 +1464,7 @@ parse_sat_witness ()
   int64_t k = 0;
   while (parse_frame (k)) k++;
 
-  if (!found_initial_frame) parse_error ("initial frame missing");
+  if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
   msg (1, "finished parsing k = %" PRId64 " frames", k);
 
   report ();
@@ -1499,7 +1490,7 @@ parse_unknown_witness ()
 
   while (parse_frame (k)) k++;
 
-  if (!found_initial_frame) parse_error ("initial frame missing");
+  if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
 
   report ();
   if (print_trace) printf (".\n"), fflush (stdout);
