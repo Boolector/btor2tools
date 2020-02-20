@@ -6,13 +6,15 @@ target_include_directories(btor2parser PRIVATE .)
 add_executable(btorsim
   btorsim/btorsimam.cpp
   btorsim/btorsimstate.cpp
+  btorsim/btorsimvcd.cpp
+  btorsim/btorsimhelpers.cpp
   btorsim/btorsim.cpp
   btorsim/btorsimbv.c
   btorsim/btorsimrng.c
 )
 target_include_directories(btorsim PRIVATE .)
 target_link_libraries(btorsim btor2parser)
-target_compile_options(btorsim PRIVATE -Wall)
+target_compile_options(btorsim PRIVATE -Wall -Wfatal-errors)
 
 add_executable(catbtor catbtor.c)
 target_link_libraries(catbtor btor2parser)
