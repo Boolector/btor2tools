@@ -1,3 +1,6 @@
+#ifndef BTOR2STATE_H_INCLUDED
+#define BTOR2STATE_H_INCLUDED
+
 #include "btorsimbv.h"
 #include "btorsimam.h"
 
@@ -17,3 +20,5 @@ struct BtorSimState {
 	void remove();
 	bool is_set();
 };
+
+#endif

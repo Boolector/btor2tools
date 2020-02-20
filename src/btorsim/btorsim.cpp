@@ -15,7 +15,6 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,52 +22,17 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
 
 #include "btor2parser/btor2parser.h"
 #include "btorsimbv.h"
 #include "btorsimrng.h"
 #include "btorsimstate.h"
+#include "btorsimvcd.h"
 
 /*------------------------------------------------------------------------*/
 
-static void
-die (const char* m, ...)
-{
-  fflush (stdout);
-  fputs ("*** 'btorsim' error: ", stderr);
-  va_list ap;
-  va_start (ap, m);
-  vfprintf (stderr, m, ap);
-  va_end (ap);
-  fprintf (stderr, "\n");
-  exit (1);
-}
-
-static int32_t verbosity;
+int32_t verbosity;
 static bool print_states;
-
-static void
-msg (int32_t level, const char* m, ...)
-{
-  if (level > verbosity) return;
-  assert (m);
-  printf ("[btorsim] ");
-  va_list ap;
-  va_start (ap, m);
-  vprintf (m, ap);
-  va_end (ap);
-  printf ("\n");
-}
-
-// this would ideally be in btorsimbv.c but that's C and doesn't know std::string
-std::string btorsim_bv_to_string (const BtorSimBitVector *bv)
-{
-  std::string sval("");
-  for (int j = bv->width - 1; j >= 0; j--)
-    sval += std::to_string(btorsim_bv_get_bit (bv, j));
-  return sval;
-}
 
 static const char *usage =
     "usage: btorsim [ <option> ... ] [ <btor> [ <witness> ] ]\n"
@@ -100,10 +64,17 @@ static FILE *model_file;
 static FILE *witness_file;
 static int32_t close_model_file;
 static int32_t close_witness_file;
+
 static bool dump_vcd = false;
+static bool yosys_fmt = false;
+#ifdef NDEBUG
+static const bool readable_vcd = false;
+#else
+static const bool readable_vcd = true;
+#endif
 
 static const char *vcd_path;
-static std::ofstream vcd_file;
+static BtorSimVCDWriter *vcd_writer;
 
 static int32_t
 parse_int (const char *str, int32_t *res_ptr)
@@ -157,10 +128,6 @@ static std::vector<Btor2Line *> states;
 static std::vector<Btor2Line *> bads;
 static std::vector<Btor2Line *> constraints;
 static std::vector<Btor2Line *> justices;
-static std::map<int64_t, std::string> bv_identifiers;
-static std::map<std::pair<int64_t, int64_t>, std::string> am_identifiers;
-static std::vector<std::string> value_changes;
-static std::vector<BtorSimState> prev_value;
 
 static std::vector<int64_t> reached_bads;
 
@@ -370,29 +337,6 @@ delete_current_state (int64_t id)
 {
   assert (0 <= id), assert (id < num_format_lines);
   if (current_state[id].type) current_state[id].remove();
-}
-
-static Btor2Sort *get_sort(Btor2Line* l)
-{
-  Btor2Sort *sort;
-  switch (l->tag) {
-    case BTOR2_TAG_output:
-    case BTOR2_TAG_bad:
-    case BTOR2_TAG_constraint:
-    case BTOR2_TAG_fair:
-    // case BTOR2_TAG_justice:
-      {
-        Btor2Line *ls = btor2parser_get_line_by_id (model, l->args[0]);
-        sort = &(ls->sort);
-      }
-      break;
-    default:
-      sort = &(l->sort);
-      break;
-  }
-  assert(sort);
-  assert(sort->id);
-  return sort;
 }
 
 static BtorSimState
@@ -838,126 +782,6 @@ initialize_states (int32_t randomly)
   }
 }
 
-static const bool readable_vcd = false;
-static const char id_start = 33;
-static const char id_end = 127;
-static int current_id = 0;
-static std::string generate_next_identifier()
-{
-  int rid = current_id++;
-  std::string ret;
-  do
-  {
-    char rem = rid % (id_end - id_start);
-    ret += (id_start + rem);
-    rid = rid / (id_end - id_start);
-  }
-  while (rid > 0);
-  return ret;
-}
-
-static std::string get_bv_identifier (int64_t id)
-{
-  if (bv_identifiers.find(id) == bv_identifiers.end())
-  {
-    if (readable_vcd)
-      bv_identifiers[id] = "n" + std::to_string(id);
-    else
-      bv_identifiers[id] = generate_next_identifier();
-  }
-  return bv_identifiers[id];
-}
-
-static std::string get_am_identifier (int64_t id, int64_t idx)
-{
-  auto key = std::make_pair(id, idx);
-  if (am_identifiers.find(key) == am_identifiers.end())
-  {
-    if (readable_vcd)
-      am_identifiers[key] = "n" + std::to_string(id) + "@" + std::to_string(idx);
-    else
-      am_identifiers[key] = generate_next_identifier();
-  }
-  return am_identifiers[key];
-}
-
-static void add_value_changes( int64_t k)
-{
-  bool k_added = false;
-  for (int i = 0; i < num_format_lines; i++)
-  {
-    Btor2Line *l = btor2parser_get_line_by_id (model, i);
-    if (!l) continue;
-    if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
-        || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
-        || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
-        || l->tag == BTOR2_TAG_justice)
-      continue; // TODO: can init and next have symbols?
-    if (!l->symbol) continue;
-    if (l->symbol[0] == '$') continue; // TODO: a bit hacky
-    Btor2Sort *sort = get_sort(l);
-    switch (sort->tag)
-    {
-      case BTOR2_TAG_SORT_bitvec:
-      {
-        if (!current_state[i].bv_state)
-        {
-          msg (1, "No current state for named state %s (%" PRId64 ")!", l->symbol, i);
-          continue;
-        }
-        if (!prev_value[i].bv_state || btorsim_bv_compare(current_state[i].bv_state, prev_value[i].bv_state))
-        {
-          if (!k_added)
-          {
-            value_changes.push_back("#" + std::to_string(k*10));
-            k_added = true;
-          }
-          std::string sval("");
-          if (current_state[i].bv_state->width > 1)
-            sval += "b";
-          sval += btorsim_bv_to_string(current_state[i].bv_state);
-          if (current_state[i].bv_state->width >1 ) sval += " ";
-          value_changes.push_back(sval + get_bv_identifier(i));
-          prev_value[i].update(btorsim_bv_copy(current_state[i].bv_state));
-        }
-      }
-      break;
-      case BTOR2_TAG_SORT_array:
-      {
-        if (!current_state[i].array_state)
-        {
-          msg (1, "No current state for named state %s (%" PRId64 ")!", l->symbol, i);
-          continue;
-        }
-
-        if(!prev_value[i].array_state || current_state[i].array_state != prev_value[i].array_state)
-        {
-          if (!k_added)
-          {
-            value_changes.push_back("#" + std::to_string(k*10));
-            k_added = true;
-          }
-          for (auto it: current_state[i].array_state->data)
-            if (!prev_value[i].array_state || prev_value[i].array_state->data.find(it.first)==prev_value[i].array_state->data.end() || prev_value[i].array_state->data.at(it.first) != it.second)
-            {
-              std::string sval("");
-              if (it.second->width > 1 ) sval += "b";
-              sval += btorsim_bv_to_string(it.second);
-              if (it.second->width > 1 ) sval += " ";
-              value_changes.push_back(sval + get_am_identifier(i, it.first));
-            }
-          prev_value[i].update(current_state[i].array_state->copy());
-        }
-
-      }
-      break;
-      default:
-        die ("Unknown sort");
-
-    }
-  }
-}
-
 static void
 simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
 {
@@ -1062,7 +886,20 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     }
   }
 
-  if (dump_vcd) add_value_changes (k);
+  if (dump_vcd)
+    for (int i = 0; i < num_format_lines; i++)
+    {
+      Btor2Line *l = btor2parser_get_line_by_id (model, i);
+      if (!l) continue;
+      if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
+          || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
+          || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
+          || l->tag == BTOR2_TAG_justice)
+        continue; // TODO: can init and next have symbols?
+      if (!l->symbol) continue;
+      if (l->symbol[0] == '$') continue; // TODO: a bit hacky
+      vcd_writer->add_value_change (k, i, current_state[i]);
+    }
 }
 
 static void
@@ -1621,7 +1458,7 @@ parse_sat_witness ()
 
   if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
   msg (1, "finished parsing k = %" PRId64 " frames", k);
-  if (dump_vcd) value_changes.push_back("#" + std::to_string((k+1)*10));
+  if (dump_vcd) vcd_writer->update_time(k+1);
 
   report ();
   if (print_trace) printf (".\n"), fflush (stdout);
@@ -1750,24 +1587,24 @@ void setup_states ()
 {
   current_state.resize(num_format_lines);
   next_state.resize(num_format_lines);
-  if (dump_vcd) prev_value.resize(num_format_lines);
+  if (dump_vcd) vcd_writer->prev_value.resize(num_format_lines);
 
   for (int i = 0; i < num_format_lines; i++)
   {
     Btor2Line *l = btor2parser_get_line_by_id (model, i);
     if (l)
     {
-      Btor2Sort *sort = get_sort(l);
+      Btor2Sort *sort = get_sort(l, model);
       switch (sort->tag) {
         case BTOR2_TAG_SORT_bitvec:
           current_state[i].type = BITVEC;
           next_state[i].type = BITVEC;
-          if (dump_vcd) prev_value[i].type = BITVEC;
+          if (dump_vcd) vcd_writer->prev_value[i].type = BITVEC;
           break;
         case BTOR2_TAG_SORT_array:
           current_state[i].type = ARRAY;
           next_state[i].type = ARRAY;
-          if (dump_vcd) prev_value[i].type = ARRAY;
+          if (dump_vcd) vcd_writer->prev_value[i].type = ARRAY;
           break;
         default:
           die ("Unknown sort");
@@ -1779,40 +1616,9 @@ void setup_states ()
   {
     assert(current_state[state->id].type != INVALID);
     assert(next_state[state->id].type != INVALID);
-    if (dump_vcd) assert(prev_value[state->id].type != INVALID);
   }
 }
 
-void write_vcd ()
-{
-  vcd_file << "$version\n\t Generated by btorsim\n$end\n";
-  vcd_file << "$timescale 1ns $end\n";
-  for (auto i : bv_identifiers)
-  {
-    Btor2Line *l = btor2parser_get_line_by_id (model, i.first);
-    assert(l);
-    assert(l->symbol);
-    Btor2Sort *sort = get_sort(l);
-    assert(sort->tag == BTOR2_TAG_SORT_bitvec);
-    vcd_file << "$var wire " << sort->bitvec.width << " " << i.second << " " << l->symbol << " $end\n";
-  }
-  for (auto i : am_identifiers)
-  {
-    int64_t id = i.first.first;
-    int64_t idx = i.first.second;
-    Btor2Line *l = btor2parser_get_line_by_id (model, id);
-    assert(l);
-    assert(l->symbol);
-    Btor2Sort *sort = get_sort(l);
-    assert(sort->tag == BTOR2_TAG_SORT_array);
-    Btor2Line *le = btor2parser_get_line_by_id (model, sort->array.element);
-    vcd_file << "$var wire " << le->sort.bitvec.width << " " << i.second << " " << l->symbol << "<" << std::hex << idx << std::dec << "> $end\n";
-  }
-  vcd_file << "$enddefinitions $end\n";
-
-  for (std::string s : value_changes)
-    vcd_file << s << "\n";
-}
 
 int32_t
 main (int32_t argc, char const *argv[])
@@ -1857,6 +1663,8 @@ main (int32_t argc, char const *argv[])
       if (++i == argc) die ("argument to '--vcd' missing");
       vcd_path = argv[i];
     }
+    else if (!strcmp (argv[i], "--yosys-fmt"))
+      yosys_fmt = true;
     else if (argv[i][0] == '-')
       die ("invalid command line option '%s' (try '-h')", argv[i]);
     else if (witness_path)
@@ -1909,7 +1717,7 @@ main (int32_t argc, char const *argv[])
   }
   if (dump_vcd)
   {
-    vcd_file.open(vcd_path);
+    vcd_writer = new BtorSimVCDWriter(vcd_path, readable_vcd, yosys_fmt);
   }
   assert (model_path);
   msg (1, "reading BTOR model from '%s'", model_path);
@@ -1948,16 +1756,13 @@ main (int32_t argc, char const *argv[])
   }
   if (dump_vcd)
   {
-    write_vcd();
-    vcd_file.close();
+    vcd_writer->write_vcd(model);
+    delete vcd_writer;
   }
   btor2parser_delete (model);
   for (int64_t i = 0; i < num_format_lines; i++)
     if (current_state[i].type) current_state[i].remove();
   for (int64_t i = 0; i < num_format_lines; i++)
     if (next_state[i].type) next_state[i].remove();
-  if (dump_vcd)
-    for (int64_t i = 0; i < num_format_lines; i++)
-      if (prev_value[i].type) prev_value[i].remove();
   return 0;
 }
