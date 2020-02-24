@@ -48,7 +48,10 @@ static const char *usage =
     "  -b <n>    fake simulation to satisfy bad state property 'b<n>'\n"
     "  -j <n>    fake simulation to satisfy justice property 'j<n>'\n"
     "\n"
-    "  --states  print all states\n"
+    "  --states                 print all states\n"
+    "  --vcd <file>             write VCD trace to <file>\n"
+    "  --hierarchical-symbols   interpret '.' in symbol names as hierarchical\n"
+    "                           module path in VCD\n"
     "\n"
     "and '<btor>' is sequential model in 'BTOR' format\n"
     "and '<witness>' a trace in 'BTOR' witness format.\n"
@@ -66,7 +69,7 @@ static int32_t close_model_file;
 static int32_t close_witness_file;
 
 static bool dump_vcd = false;
-static bool yosys_fmt = false;
+static bool symbol_fmt = false;
 #ifdef NDEBUG
 static const bool readable_vcd = false;
 #else
@@ -1654,8 +1657,8 @@ main (int32_t argc, char const *argv[])
       if (++i == argc) die ("argument to '--vcd' missing");
       vcd_path = argv[i];
     }
-    else if (!strcmp (argv[i], "--yosys-fmt"))
-      yosys_fmt = true;
+    else if (!strcmp (argv[i], "--hierarchical-symbols"))
+      symbol_fmt = true;
     else if (argv[i][0] == '-')
       die ("invalid command line option '%s' (try '-h')", argv[i]);
     else if (witness_path)
@@ -1708,7 +1711,7 @@ main (int32_t argc, char const *argv[])
   }
   if (dump_vcd)
   {
-    vcd_writer = new BtorSimVCDWriter(vcd_path, readable_vcd, yosys_fmt);
+    vcd_writer = new BtorSimVCDWriter(vcd_path, readable_vcd, symbol_fmt);
   }
   assert (model_path);
   msg (1, "reading BTOR model from '%s'", model_path);
