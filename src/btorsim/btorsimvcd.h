@@ -22,6 +22,7 @@ public:
   std::vector<ModuleTreeNode*> submodules;
   ModuleTreeNode (std::string name) : name(name) {};
   ModuleTreeNode (const char* s) : name(std::string(s)) {};
+  ~ModuleTreeNode ();
   void sort_name (int64_t id, std::string symbol, uint32_t width, bool symbol_fmt);
 };
 
