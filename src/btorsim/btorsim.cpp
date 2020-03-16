@@ -438,7 +438,7 @@ simulate (int64_t id)
         break;
       case BTOR2_TAG_neg:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
         res.bv_state = btorsim_bv_neg (args[0].bv_state);
         break;
       case BTOR2_TAG_neq:
