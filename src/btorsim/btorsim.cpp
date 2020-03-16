@@ -364,146 +364,146 @@ simulate (int64_t id)
     {
       case BTOR2_TAG_add:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_add (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_and:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_and (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_concat:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_concat (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_const:
         assert (l->nargs == 0);
-        assert (res.type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_char_to_bv (l->constant);
         break;
       case BTOR2_TAG_constd:
         assert (l->nargs == 0);
-        assert (res.type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_constd (l->constant, l->sort.bitvec.width);
         break;
       case BTOR2_TAG_consth:
         assert (l->nargs == 0);
-        assert (res.type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_consth (l->constant, l->sort.bitvec.width);
         break;
       case BTOR2_TAG_dec:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_dec (args[0].bv_state);
         break;
       case BTOR2_TAG_eq:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC);
-        if (args[0].type == ARRAY) {
-          assert(args[1].type == ARRAY);
+        assert (res.type == BtorSimState::Type::BITVEC);
+        if (args[0].type == BtorSimState::Type::ARRAY) {
+          assert(args[1].type == BtorSimState::Type::ARRAY);
           res.bv_state = btorsim_am_eq (args[0].array_state, args[1].array_state);
         } else {
-          assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+          assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
           res.bv_state = btorsim_bv_eq (args[0].bv_state, args[1].bv_state);
         }
         break;
       case BTOR2_TAG_implies:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_implies (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_inc:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_inc (args[0].bv_state);
         break;
       case BTOR2_TAG_ite:
         assert (l->nargs == 3);
-        assert(args[0].type == BITVEC);
-        if (res.type == ARRAY) {
-          assert(args[1].type == ARRAY);
-          assert(args[2].type == ARRAY);
+        assert(args[0].type == BtorSimState::Type::BITVEC);
+        if (res.type == BtorSimState::Type::ARRAY) {
+          assert(args[1].type == BtorSimState::Type::ARRAY);
+          assert(args[2].type == BtorSimState::Type::ARRAY);
           res.array_state = btorsim_am_ite (args[0].bv_state, args[1].array_state, args[2].array_state);
         } else {
-          assert(args[1].type == BITVEC);
-          assert(args[2].type == BITVEC);
+          assert(args[1].type == BtorSimState::Type::BITVEC);
+          assert(args[2].type == BtorSimState::Type::BITVEC);
           res.bv_state = btorsim_bv_ite (args[0].bv_state, args[1].bv_state, args[2].bv_state);
         }
         break;
       case BTOR2_TAG_mul:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_mul (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_nand:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_nand (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_neg:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_neg (args[0].bv_state);
         break;
       case BTOR2_TAG_neq:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC);
-        if (args[0].type == ARRAY) {
-          assert(args[1].type == ARRAY);
+        assert (res.type == BtorSimState::Type::BITVEC);
+        if (args[0].type == BtorSimState::Type::ARRAY) {
+          assert(args[1].type == BtorSimState::Type::ARRAY);
           res.bv_state = btorsim_am_neq (args[0].array_state, args[1].array_state);
         } else {
-          assert(args[0].type == BITVEC);
-          assert(args[1].type == BITVEC);
+          assert(args[0].type == BtorSimState::Type::BITVEC);
+          assert(args[1].type == BtorSimState::Type::BITVEC);
           res.bv_state = btorsim_bv_neq (args[0].bv_state, args[1].bv_state);
         }
         break;
       case BTOR2_TAG_nor:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_nor (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_not:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_not (args[0].bv_state);
         break;
       case BTOR2_TAG_one:
-        assert (res.type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_one (l->sort.bitvec.width);
         break;
       case BTOR2_TAG_ones:
-        assert (res.type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_ones (l->sort.bitvec.width);
         break;
       case BTOR2_TAG_or:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_or (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_redand:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_redand (args[0].bv_state);
         break;
       case BTOR2_TAG_redor:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_redor (args[0].bv_state);
         break;
       case BTOR2_TAG_slice:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_slice (args[0].bv_state, l->args[1], l->args[2]);
         break;
       case BTOR2_TAG_sub:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_sub (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_uext:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         {
           uint32_t width = args[0].bv_state->width;
           assert (width <= l->sort.bitvec.width);
@@ -516,17 +516,17 @@ simulate (int64_t id)
         break;
       case BTOR2_TAG_udiv:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_udiv (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_sdiv:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_sdiv (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_sext:
         assert (l->nargs == 1);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC);
         {
           uint32_t width = args[0].bv_state->width;
           assert (width <= l->sort.bitvec.width);
@@ -539,94 +539,94 @@ simulate (int64_t id)
         break;
       case BTOR2_TAG_sll:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_sll (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_srl:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_srl (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_sra:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_sra (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_srem:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_srem (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_ugt:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_ult (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_ugte:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_ulte (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_ult:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_ult (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_ulte:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_ulte (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_urem:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_urem (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_sgt:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_slt (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_sgte:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_slte (args[1].bv_state, args[0].bv_state);
         break;
       case BTOR2_TAG_slt:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_slt (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_slte:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_slte (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_iff:
       case BTOR2_TAG_xnor:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_xnor (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_xor:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == BITVEC), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::BITVEC), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_xor (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_zero:
-        assert (res.type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_zero (l->sort.bitvec.width);
         break;
       case BTOR2_TAG_read:
         assert (l->nargs == 2);
-        assert (res.type == BITVEC), assert(args[0].type == ARRAY), assert(args[1].type == BITVEC);
+        assert (res.type == BtorSimState::Type::BITVEC), assert(args[0].type == BtorSimState::Type::ARRAY), assert(args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = args[0].array_state->read(args[1].bv_state);
         {Btor2Line *mem = btor2parser_get_line_by_id (model, l->args[0]);
         msg (4, "read %s[%s] -> %s", mem->symbol ? mem->symbol : std::to_string(mem->id).c_str(), btorsim_bv_to_string(args[1].bv_state).c_str(), btorsim_bv_to_string(res.bv_state).c_str());}
         break;
       case BTOR2_TAG_write:
         assert (l->nargs == 3);
-        assert (res.type == ARRAY), assert(args[0].type == ARRAY), assert(args[1].type == BITVEC), assert(args[2].type == BITVEC);
+        assert (res.type == BtorSimState::Type::ARRAY), assert(args[0].type == BtorSimState::Type::ARRAY), assert(args[1].type == BtorSimState::Type::BITVEC), assert(args[2].type == BtorSimState::Type::BITVEC);
         res.array_state = args[0].array_state->write(args[1].bv_state, args[2].bv_state);
         {Btor2Line *mem = btor2parser_get_line_by_id (model, l->args[0]);
         msg (4, "write %s[%s] <- %s", mem->symbol ? mem->symbol : std::to_string(mem->id).c_str(), btorsim_bv_to_string(args[1].bv_state).c_str(), btorsim_bv_to_string(args[2].bv_state).c_str());}
@@ -640,13 +640,13 @@ simulate (int64_t id)
     for (uint32_t i = 0; i < l->nargs; i++) args[i].remove();
     update_current_state (id, res);
   }
-  if (res.type == ARRAY)
+  if (res.type == BtorSimState::Type::ARRAY)
   {
     res.array_state = res.array_state->copy();
   }
   else
   {
-    assert (res.type == BITVEC);
+    assert (res.type == BtorSimState::Type::BITVEC);
     if (sign < 0)
       res.bv_state = btorsim_bv_not (res.bv_state);
     else
@@ -662,13 +662,13 @@ static void print_state_or_input (int64_t id, int64_t pos, int64_t step, bool is
 {
   Btor2Line *l = btor2parser_get_line_by_id(model, id);
   switch (current_state[id].type) {
-    case BITVEC:
+    case BtorSimState::Type::BITVEC:
       printf ("%lu ", pos);
       btorsim_bv_print_without_new_line (current_state[id].bv_state);
       if (l->symbol) printf (" %s%s%" PRId64, l->symbol, is_input ? "@" : "#", step);
       fputc ('\n', stdout);
       break;
-    case ARRAY:
+    case BtorSimState::Type::ARRAY:
       for (auto e : current_state[id].array_state->data)
       {
         printf ("%lu [%" PRId64 "]", pos, e.first);
@@ -746,7 +746,7 @@ initialize_states (int32_t randomly)
       else
       {
         switch (current_state[state->id].type) {
-          case BITVEC:
+          case BtorSimState::Type::BITVEC:
             assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
             BtorSimBitVector* bv;
             if (randomly)
@@ -755,7 +755,7 @@ initialize_states (int32_t randomly)
               bv = btorsim_bv_new (state->sort.bitvec.width);
             update_current_state (state->id, bv);
             break;
-          case ARRAY:
+          case BtorSimState::Type::ARRAY:
             assert (state->sort.tag == BTOR2_TAG_SORT_array);
             {
               Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
@@ -798,7 +798,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     BtorSimState s = simulate (i);
 #if 0
     printf ("[btorim] %" PRId64 " %s ", l->id, l->name);
-    if(s.type == BITVEC) btorsim_bv_print (s.bv_state);
+    if(s.type == BtorSimState::Type::BITVEC) btorsim_bv_print (s.bv_state);
     fflush (stdout);
 #endif
     s.remove();
@@ -819,7 +819,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     {
       if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
       {
-        update.type = BITVEC;
+        update.type = BtorSimState::Type::BITVEC;
         uint32_t width = state->sort.bitvec.width;
         if (randomize_states_that_are_inputs)
           update.bv_state = btorsim_bv_new_random (&rng, width);
@@ -829,7 +829,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
       else
       {
         assert (state->sort.tag == BTOR2_TAG_SORT_array);
-        update.type = ARRAY;
+        update.type = BtorSimState::Type::ARRAY;
         Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
         Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
         assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
@@ -852,7 +852,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     {
       Btor2Line *constraint = constraints[i];
       BtorSimState s = current_state[constraint->args[0]];
-      assert(s.type == BITVEC);
+      assert(s.type == BtorSimState::Type::BITVEC);
       if (!btorsim_bv_is_zero (s.bv_state)) continue;
       msg (1,
            "constraint(%" PRId64 ") '%" PRId64 " constraint %" PRId64 "' violated at time %" PRId64,
@@ -872,7 +872,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
       if (r >= 0) continue;
       Btor2Line *bad       = bads[i];
       BtorSimState s = current_state[bad->args[0]];
-      assert(s.type == BITVEC);
+      assert(s.type == BtorSimState::Type::BITVEC);
       if (btorsim_bv_is_zero (s.bv_state)) continue;
       int64_t bound = reached_bads[i];
       if (bound >= 0) continue;
@@ -888,7 +888,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
   for (auto it: extra_constraints)
   {
     BtorSimState s = current_state[it.first];
-    assert(s.type == BITVEC);
+    assert(s.type == BtorSimState::Type::BITVEC);
     if (btorsim_bv_is_zero (s.bv_state)) continue;
     printf("[btorsim] Assert failed in test: %s (step %" PRId64 ")\n", it.second.c_str(), k);
   }
@@ -924,10 +924,10 @@ transition (int64_t k)
     assert (update.is_set());
     update_current_state (state->id, update);
     switch (next_state[state->id].type) {
-      case BITVEC:
+      case BtorSimState::Type::BITVEC:
         next_state[state->id].bv_state = nullptr;
         break;
-      case ARRAY:
+      case BtorSimState::Type::ARRAY:
         next_state[state->id].array_state = nullptr;
         break;
       default:
@@ -1266,14 +1266,14 @@ parse_state_part (int64_t k)
       BtorSimState tmp = simulate (init->args[1]);
       if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
       {
-        assert (tmp.type == BITVEC);
+        assert (tmp.type == BtorSimState::Type::BITVEC);
         if (btorsim_bv_compare (val, tmp.bv_state))
           parse_error (
               "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
       }
       else
       {
-        assert(tmp.type == ARRAY);
+        assert(tmp.type == BtorSimState::Type::ARRAY);
         BtorSimBitVector* element = tmp.array_state->check(idx);
         if (element)
         {
@@ -1318,9 +1318,9 @@ parse_state_part (int64_t k)
       update_current_state (state->id, val);
     else
     {
-      assert (current_state[state->id].type == ARRAY);
+      assert (current_state[state->id].type == BtorSimState::Type::ARRAY);
       BtorSimState tmp;
-      tmp.type = ARRAY;
+      tmp.type = BtorSimState::Type::ARRAY;
       tmp.array_state = current_state[state->id].array_state->write(idx, val);
       update_current_state (state->id, tmp);
       btorsim_bv_free(idx);
@@ -1377,7 +1377,7 @@ parse_input_part (int64_t k)
             k);
     Btor2Line *input = inputs[input_pos];
     assert (input);
-    if (current_state[input->id].type == BITVEC)
+    if (current_state[input->id].type == BtorSimState::Type::BITVEC)
     {
       if (strlen (constant.start) != input->sort.bitvec.width)
         charno = constant_columno,
@@ -1395,7 +1395,7 @@ parse_input_part (int64_t k)
     }
     else
     {
-      assert(current_state[input->id].type == ARRAY);
+      assert(current_state[input->id].type == BtorSimState::Type::ARRAY);
       BtorSimBitVector *idx = btorsim_bv_char_to_bv (array_index.start);
       BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
       lineno++;
@@ -1605,14 +1605,14 @@ void setup_states ()
       Btor2Sort *sort = get_sort(l, model);
       switch (sort->tag) {
         case BTOR2_TAG_SORT_bitvec:
-          current_state[i].type = BITVEC;
-          next_state[i].type = BITVEC;
-          if (dump_vcd) vcd_writer->prev_value[i].type = BITVEC;
+          current_state[i].type = BtorSimState::Type::BITVEC;
+          next_state[i].type = BtorSimState::Type::BITVEC;
+          if (dump_vcd) vcd_writer->prev_value[i].type = BtorSimState::Type::BITVEC;
           break;
         case BTOR2_TAG_SORT_array:
-          current_state[i].type = ARRAY;
-          next_state[i].type = ARRAY;
-          if (dump_vcd) vcd_writer->prev_value[i].type = ARRAY;
+          current_state[i].type = BtorSimState::Type::ARRAY;
+          next_state[i].type = BtorSimState::Type::ARRAY;
+          if (dump_vcd) vcd_writer->prev_value[i].type = BtorSimState::Type::ARRAY;
           break;
         default:
           die ("Unknown sort");
@@ -1622,8 +1622,8 @@ void setup_states ()
 
   for (auto state: states)
   {
-    assert(current_state[state->id].type != INVALID);
-    assert(next_state[state->id].type != INVALID);
+    assert(current_state[state->id].type != BtorSimState::Type::INVALID);
+    assert(next_state[state->id].type != BtorSimState::Type::INVALID);
   }
 }
 

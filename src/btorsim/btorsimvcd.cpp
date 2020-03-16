@@ -26,7 +26,7 @@ BtorSimVCDWriter::~BtorSimVCDWriter ()
 {
   vcd_file.close();
   for (std::vector<BtorSimState>::size_type i = 0; i < prev_value.size(); i++)
-    if (prev_value[i].type != INVALID) prev_value[i].remove();
+    if (prev_value[i].type != BtorSimState::Type::INVALID) prev_value[i].remove();
 }
 
 std::string BtorSimVCDWriter::generate_next_identifier()
@@ -270,7 +270,7 @@ void BtorSimVCDWriter::add_value_change(int64_t k, int64_t id, BtorSimState stat
   if (clocks.find(id) != clocks.end()) return;
   switch (state.type)
   {
-    case BITVEC:
+    case BtorSimState::Type::BITVEC:
     {
       if (!state.bv_state)
       {
@@ -290,7 +290,7 @@ void BtorSimVCDWriter::add_value_change(int64_t k, int64_t id, BtorSimState stat
       }
     }
     break;
-    case ARRAY:
+    case BtorSimState::Type::ARRAY:
     {
       if (!state.array_state)
       {
