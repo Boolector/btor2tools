@@ -4,6 +4,7 @@
  *  Copyright (c) 2018 Armin Biere.
  *  Copyright (c) 2018 Aina Niemetz.
  *  Copyright (c) 2019 Mathias Preiner.
+ *  Copyright (c) 2020 Nina Engelhardt.
  *
  *  All rights reserved.
  *
