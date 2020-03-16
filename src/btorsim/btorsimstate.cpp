@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include "btorsimstate.h"
+#include "btorsimhelpers.h"
 
 void BtorSimState::update(BtorSimBitVector *bv)
 {
@@ -37,8 +38,7 @@ void BtorSimState::update(BtorSimState& s)
 		update(s.bv_state);
 		break;
 	default:
-		fprintf (stderr, "*** 'btorsim' error: Updating invalid state!\n");
-		exit (1);
+		die ("Updating invalid state!");
 	}
 }
 
@@ -55,8 +55,7 @@ void BtorSimState::remove()
 		bv_state = nullptr;
 		break;
 	default:
-		fprintf (stderr, "*** 'btorsim' error: Removing invalid state!\n");
-		exit (1);
+		die ("Removing invalid state!");
 	}
 }
 
@@ -69,7 +68,7 @@ bool BtorSimState::is_set()
 	case BtorSimState::Type::BITVEC:
 		return bv_state != nullptr;
 	default:
-		fprintf (stderr, "*** 'btorsim' error: Checking invalid state!\n");
-		exit (1);
+		die ("Checking invalid state!");
+		return false; //compiler can't tell that die contains exit, complains about lack of return value
 	}
 }
