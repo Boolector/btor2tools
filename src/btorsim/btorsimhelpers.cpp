@@ -48,6 +48,14 @@ std::string btorsim_bv_to_string (const BtorSimBitVector *bv)
   return sval;
 }
 
+std::string btorsim_bv_to_hex_string (const BtorSimBitVector *bv)
+{
+  char * bv_char = btorsim_bv_to_hex_char(bv);
+  std::string res(bv_char);
+  BTOR2_DELETE (bv_char);
+  return res;
+}
+
 Btor2Sort *get_sort(Btor2Line* l, Btor2Parser *model)
 {
   Btor2Sort *sort;
