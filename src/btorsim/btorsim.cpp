@@ -676,7 +676,7 @@ static void print_state_or_input (int64_t id, int64_t pos, int64_t step, bool is
     case BtorSimState::Type::ARRAY:
       for (auto e : current_state[id].array_state->data)
       {
-        printf ("%lu [%" PRId64 "]", pos, e.first);
+        printf ("%lu [%s]", pos, e.first.c_str());
         btorsim_bv_print_without_new_line (e.second);
         if (l->symbol) printf (" %s%s%" PRId64, l->symbol, is_input ? "@" : "#", step);
         fputc ('\n', stdout);
@@ -715,9 +715,7 @@ initialize_inputs (int64_t k, int32_t randomize)
         Btor2Line *le = btor2parser_get_line_by_id (model, input->sort.array.element);
         assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
         assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
-        uint64_t width = le->sort.bitvec.width;
-        uint64_t depth = (1 << li->sort.bitvec.width);
-        BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
+        BtorSimArrayModel* am = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
         if (randomize) {
           am->random_seed = btorsim_rng_rand(&rng);
         }
@@ -767,9 +765,7 @@ initialize_states (int32_t randomly)
               Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
               assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
               assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
-              uint64_t width = le->sort.bitvec.width;
-              uint64_t depth = (1 << li->sort.bitvec.width);
-              BtorSimArrayModel* am = new BtorSimArrayModel(width, depth);
+              BtorSimArrayModel* am = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
               if (randomly) {
                 am->random_seed = btorsim_rng_rand(&rng);
               }
@@ -839,9 +835,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
         Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
         assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
         assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
-        uint64_t width = le->sort.bitvec.width;
-        uint64_t depth = (1 << li->sort.bitvec.width);
-        update.array_state = new BtorSimArrayModel(width, depth);
+        update.array_state = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
         if (randomize_states_that_are_inputs)
           update.array_state->random_seed = btorsim_rng_rand(&rng);
       }
@@ -1244,7 +1238,7 @@ parse_state_part (int64_t k)
       }
       if (!current_state[state->id].array_state)
       {
-        current_state[state->id].array_state = new BtorSimArrayModel(le->sort.bitvec.width, (1 << li->sort.bitvec.width));
+        current_state[state->id].array_state = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
       }
       assert(current_state[state->id].array_state);
     }

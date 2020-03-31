@@ -15,19 +15,19 @@
 #ifndef BTOR2AM_H_INCLUDED
 #define BTOR2AM_H_INCLUDED
 
-#include <map>
+#include <unordered_map>
 
 #include "btorsimbv.h"
 
 struct BtorSimArrayModel {
-	uint64_t width;
-	uint64_t depth;
+	uint64_t index_width;
+	uint64_t element_width;
 	uint64_t random_seed;
 
-	std::map<uint64_t, BtorSimBitVector*> data;
+	std::unordered_map<std::string, BtorSimBitVector *> data;
 
-	BtorSimArrayModel(uint64_t width, uint64_t depth) : width(width), depth(depth), random_seed(0) {};
-	BtorSimArrayModel(uint64_t width, uint64_t depth, uint64_t random_seed) : width(width), depth(depth), random_seed(random_seed) {};
+	BtorSimArrayModel(uint64_t index_width, uint64_t element_width) : index_width(index_width), element_width(element_width), random_seed(0) {};
+	BtorSimArrayModel(uint64_t index_width, uint64_t element_width, uint64_t random_seed) : index_width(index_width), element_width(element_width), random_seed(random_seed) {};
 	~BtorSimArrayModel();
 	BtorSimArrayModel(const BtorSimArrayModel&) = delete;
 	BtorSimArrayModel& operator=(const BtorSimArrayModel&) = delete;

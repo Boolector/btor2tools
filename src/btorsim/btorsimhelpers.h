@@ -16,6 +16,7 @@
 #define BTOR2HELP_H_INCLUDED
 
 #include <string>
+#include <vector>
 #include <cstdarg>
 #include <cassert>
 
@@ -29,5 +30,6 @@ void msg (int32_t level, const char* m, ...);
 
 Btor2Sort *get_sort(Btor2Line* l, Btor2Parser *model);
 std::string btorsim_bv_to_string (const BtorSimBitVector *bv);
+std::string btorsim_bv_to_hex_string (const BtorSimBitVector *bv);
 
 #endif

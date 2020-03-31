@@ -45,12 +45,12 @@ private:
   int current_id;
   int64_t current_step;
   std::map<int64_t, std::string> bv_identifiers;
-  std::map<std::pair<int64_t, int64_t>, std::string> am_identifiers;
+  std::map<std::pair<int64_t, std::string>, std::string> am_identifiers;
   std::vector<std::string> value_changes;
 public:
   std::vector<BtorSimState> prev_value;
   void write_vcd (Btor2Parser *model);
-  std::string get_am_identifier (int64_t id, int64_t idx);
+  std::string get_am_identifier (int64_t id, std::string);
   std::string get_bv_identifier (int64_t id);
   std::string generate_next_identifier ();
   void setup (Btor2Parser *model, int num_format_lines);

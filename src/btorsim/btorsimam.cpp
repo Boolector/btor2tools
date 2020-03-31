@@ -11,6 +11,7 @@
 
 #include <cassert>
 #include "btorsimam.h"
+#include "btorsimhelpers.h"
 
 BtorSimArrayModel::~BtorSimArrayModel()
 {
@@ -26,35 +27,37 @@ uint64_t BtorSimArrayModel::get_random_init(uint64_t idx) const
 	return (random_seed + idx)*(random_seed + idx + 1)/2 + idx;
 }
 
-BtorSimBitVector* BtorSimArrayModel::read(const BtorSimBitVector* index)
+BtorSimBitVector* BtorSimArrayModel::read (const BtorSimBitVector* index)
 {
-	uint64_t i = btorsim_bv_to_uint64(index);
-	assert(i < depth);
+	assert (index->width <= index_width);
+	std::string i = btorsim_bv_to_string(index);
 	if (!data[i])
 	{
 		if (random_seed)
-			data[i] = btorsim_bv_uint64_to_bv (get_random_init(i), width);
+			data[i] = btorsim_bv_uint64_to_bv (get_random_init(btorsim_bv_to_uint64(index)), element_width);
 		else
-			data[i] = btorsim_bv_new(width);
+			data[i] = btorsim_bv_new (element_width);
 	}
-	return btorsim_bv_copy(data[i]);
+	return btorsim_bv_copy (data[i]);
 }
 
 BtorSimArrayModel* BtorSimArrayModel::write(const BtorSimBitVector* index, const BtorSimBitVector* element)
 {
-	uint64_t i = btorsim_bv_to_uint64(index);
-	assert(i < depth);
-	assert(element->width == width);
+	assert (index->width <= index_width);
+	assert (element->width == element_width);
+	std::string i = btorsim_bv_to_string (index);
 	BtorSimArrayModel* res = copy();
-	if (res->data[i]) btorsim_bv_free(res->data[i]);
-	res->data[i] = btorsim_bv_copy(element);
+	if (res->data[i]) {
+		btorsim_bv_free (res->data[i]);
+	}
+	res->data[i] = btorsim_bv_copy (element);
 	return res;
 }
 
 BtorSimBitVector* BtorSimArrayModel::check(const BtorSimBitVector* index) const
 {
-	uint64_t i = btorsim_bv_to_uint64(index);
-	assert(i < depth);
+	assert (index->width <= index_width);
+	std::string i = btorsim_bv_to_string(index);
 	if (data.find(i) != data.end())
 		return btorsim_bv_copy(data.at(i));
 	else
@@ -63,7 +66,7 @@ BtorSimBitVector* BtorSimArrayModel::check(const BtorSimBitVector* index) const
 
 BtorSimArrayModel* BtorSimArrayModel::copy() const
 {
-	BtorSimArrayModel* res = new BtorSimArrayModel(width, depth);
+	BtorSimArrayModel* res = new BtorSimArrayModel(index_width, element_width);
 	for (auto i: data)
 		res->data[i.first] = btorsim_bv_copy(i.second);
 	return res;
@@ -90,8 +93,8 @@ BtorSimBitVector* btorsim_am_eq(const BtorSimArrayModel* a, const BtorSimArrayMo
 {
 	//TODO: is comparing arrays of different dimensions false or error?
 	assert (a), assert (b);
-	assert (a->width == b->width);
-	assert (a->depth == b->depth);
+	assert (a->element_width == b->element_width);
+	assert (a->index_width == b->index_width);
 	uint32_t bit = (*a == *b) ? 1 : 0;
 
 	BtorSimBitVector* res = btorsim_bv_new(1);
@@ -103,8 +106,8 @@ BtorSimBitVector* btorsim_am_neq(const BtorSimArrayModel* a, const BtorSimArrayM
 {
 	//TODO: is comparing arrays of different dimensions false or error?
 	assert(a), assert(b);
-	assert (a->width == b->width);
-	assert (a->depth == b->depth);
+	assert (a->element_width == b->element_width);
+	assert (a->index_width == b->index_width);
 	uint32_t bit = (*a == *b) ? 0 : 1;
 
 	BtorSimBitVector* res = btorsim_bv_new(1);
@@ -118,8 +121,8 @@ BtorSimArrayModel* btorsim_am_ite(const BtorSimBitVector* c, const BtorSimArrayM
 	assert (c->len == 1);
 	assert(t);
 	assert(e);
-	assert(t->width == e->width);
-	assert(t->depth == e->depth);
+	assert(t->element_width == e->element_width);
+	assert(t->index_width == e->index_width);
 
 	BtorSimArrayModel* res;
 	if(btorsim_bv_get_bit (c, 0))

@@ -52,13 +52,17 @@ std::string BtorSimVCDWriter::get_bv_identifier (int64_t id)
   return bv_identifiers[id];
 }
 
-std::string BtorSimVCDWriter::get_am_identifier (int64_t id, int64_t idx)
+std::string BtorSimVCDWriter::get_am_identifier (int64_t id, std::string idx)
 {
-  auto key = std::make_pair(id, idx);
+  BtorSimBitVector* bv_idx = btorsim_bv_char_to_bv(idx.c_str());
+  auto key = std::make_pair(id, btorsim_bv_to_hex_string(bv_idx));
+  btorsim_bv_free(bv_idx);
   if (am_identifiers.find(key) == am_identifiers.end())
   {
     if (readable_vcd)
-      am_identifiers[key] = "n" + std::to_string(id) + "@" + std::to_string(idx);
+    {
+      am_identifiers[key] = "n" + std::to_string(id) + "@" + key.second;
+    }
     else
       am_identifiers[key] = generate_next_identifier();
   }
@@ -138,7 +142,7 @@ void BtorSimVCDWriter::write_node_header (ModuleTreeNode* top)
       for (auto j : am_identifiers)
         if(j.first.first == id)
         {
-          int64_t idx = j.first.second;
+          std::string idx = j.first.second;
           std::string am_ident = j.second;
           vcd_file << "$var wire " << width << " " << am_ident << " " << symbol << "<" << std::hex << idx << std::dec << "> $end\n";
         }
