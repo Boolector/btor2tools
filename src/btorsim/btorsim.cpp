@@ -53,6 +53,8 @@ static const char *usage =
     "  --vcd <file>             write VCD trace to <file>\n"
     "  --hierarchical-symbols   interpret '.' in symbol names as hierarchical\n"
     "                           module path in VCD\n"
+    "  --info <file>            read additional information for clocks and top\n"
+    "                           module name from <file>\n"
     "\n"
     "and '<btor>' is sequential model in 'BTOR' format\n"
     "and '<witness>' a trace in 'BTOR' witness format.\n"
@@ -1454,7 +1456,7 @@ parse_sat_witness ()
   int64_t k = 0;
   while (parse_frame (k)) k++;
 
-  if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
+  // if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
   msg (1, "finished parsing k = %" PRId64 " frames", k);
   if (dump_vcd) vcd_writer->update_time(k+1);
 
@@ -1481,7 +1483,7 @@ parse_unknown_witness ()
 
   while (parse_frame (k)) k++;
 
-  if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
+  // if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
 
   report ();
   if (print_trace) printf (".\n"), fflush (stdout);
@@ -1621,6 +1623,7 @@ void setup_states ()
 int32_t
 main (int32_t argc, char const *argv[])
 {
+  const char *info_path = nullptr;
   int64_t fake_bad = -1, fake_justice = -1;
   int32_t r = -1, s = -1;
   for (int32_t i = 1; i < argc; i++)
@@ -1663,6 +1666,11 @@ main (int32_t argc, char const *argv[])
     }
     else if (!strcmp (argv[i], "--hierarchical-symbols"))
       symbol_fmt = true;
+    else if (!strcmp (argv[i], "--info"))
+    {
+      if (++i == argc) die ("argument to '--info' missing");
+      info_path = argv[i];
+    }
     else if (argv[i][0] == '-')
       die ("invalid command line option '%s' (try '-h')", argv[i]);
     else if (witness_path)
@@ -1716,6 +1724,9 @@ main (int32_t argc, char const *argv[])
   if (dump_vcd)
   {
     vcd_writer = new BtorSimVCDWriter(vcd_path, readable_vcd, symbol_fmt);
+    if (info_path) {
+      auto extra_bads = vcd_writer->read_info_file(info_path);
+    }
   }
   assert (model_path);
   msg (1, "reading BTOR model from '%s'", model_path);
