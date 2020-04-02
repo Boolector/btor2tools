@@ -47,6 +47,9 @@ private:
   std::map<int64_t, std::string> bv_identifiers;
   std::map<std::pair<int64_t, int64_t>, std::string> am_identifiers;
   std::vector<std::string> value_changes;
+  std::string topname;
+  enum ClkType {POSEDGE, NEGEDGE, EVENT};
+  std::map<int64_t, ClkType> clocks;
 public:
   std::vector<BtorSimState> prev_value;
   void write_vcd (Btor2Parser *model);
@@ -58,6 +61,7 @@ public:
   void add_value_change (int64_t k, int64_t id, BtorSimState state);
   ModuleTreeNode* sort_names (Btor2Parser *model, std::string topname);
   void write_node_header (ModuleTreeNode* top);
+  std::map<int64_t, std::string> read_info_file(const char* info_path);
   BtorSimVCDWriter (const char* vcd_path, bool readable_vcd, bool symbol_fmt);
   ~BtorSimVCDWriter ();
 };
