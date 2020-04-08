@@ -140,6 +140,8 @@ static std::vector<int64_t> reached_bads;
 static int64_t constraints_violated = -1;
 static int64_t num_unreached_bads;
 
+static std::map<int64_t, std::string> extra_constraints;
+
 static int64_t num_format_lines;
 static std::vector<Btor2Line *> inits;
 static std::vector<Btor2Line *> nexts;
@@ -883,18 +885,30 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     }
   }
 
+  for (auto it: extra_constraints)
+  {
+    BtorSimState s = current_state[it.first];
+    assert(s.type == BITVEC);
+    if (btorsim_bv_is_zero (s.bv_state)) continue;
+    printf("[btorsim] Assert failed in test: %s (step %" PRId64 ")\n", it.second.c_str(), k);
+  }
+
   if (dump_vcd)
     for (int i = 0; i < num_format_lines; i++)
     {
       Btor2Line *l = btor2parser_get_line_by_id (model, i);
       if (!l) continue;
+      // these are not signals
       if (l->tag == BTOR2_TAG_sort || l->tag == BTOR2_TAG_init
           || l->tag == BTOR2_TAG_next || l->tag == BTOR2_TAG_bad
           || l->tag == BTOR2_TAG_constraint || l->tag == BTOR2_TAG_fair
           || l->tag == BTOR2_TAG_justice)
-        continue; // TODO: can init and next have symbols?
+        continue;
+      // only add named signals
       if (!l->symbol) continue;
-      if (l->symbol[0] == '$') continue; // TODO: a bit hacky
+      // ignore names starting with '$' in yosys format mode
+      // (these are internally generated and won't mean anything to the user)
+      if (symbol_fmt && l->symbol[0] == '$') continue;
       vcd_writer->add_value_change (k, i, current_state[i]);
     }
 }
@@ -1722,7 +1736,7 @@ main (int32_t argc, char const *argv[])
   {
     vcd_writer = new BtorSimVCDWriter(vcd_path, readable_vcd, symbol_fmt);
     if (info_path) {
-      auto extra_bads = vcd_writer->read_info_file(info_path);
+      extra_constraints = vcd_writer->read_info_file(info_path);
     }
   }
   assert (model_path);
