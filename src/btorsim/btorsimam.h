@@ -15,6 +15,7 @@
 #ifndef BTOR2AM_H_INCLUDED
 #define BTOR2AM_H_INCLUDED
 
+#include <string>
 #include <unordered_map>
 
 #include "btorsimbv.h"
