@@ -135,6 +135,7 @@ BtorSimBitVector *btorsim_bv_dec (const BtorSimBitVector *bv);
 
 BtorSimBitVector *btorsim_bv_redor (const BtorSimBitVector *bv);
 BtorSimBitVector *btorsim_bv_redand (const BtorSimBitVector *bv);
+BtorSimBitVector *btorsim_bv_redxor (const BtorSimBitVector *bv);
 
 BtorSimBitVector *btorsim_bv_add (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);

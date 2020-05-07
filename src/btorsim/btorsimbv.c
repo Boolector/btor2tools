@@ -1246,6 +1246,28 @@ btorsim_bv_redor (const BtorSimBitVector *bv)
   return res;
 }
 
+BtorSimBitVector *
+btorsim_bv_redxor (const BtorSimBitVector *bv)
+{
+  assert (bv);
+
+  uint32_t i;
+  uint32_t bit;
+  BtorSimBitVector *res;
+
+  res = btorsim_bv_new (1);
+  assert (rem_bits_zero_dbg (res));
+  bit = btorsim_bv_get_bit (bv, 0);
+  for (i = 1; i < bv->width; i++)
+  {
+    bit = bit ^ btorsim_bv_get_bit (bv, i);
+  }
+  btorsim_bv_set_bit (res, 0, bit);
+
+  assert (rem_bits_zero_dbg (res));
+  return res;
+}
+
 /*------------------------------------------------------------------------*/
 
 BtorSimBitVector *
