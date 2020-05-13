@@ -1673,7 +1673,16 @@ btorsim_bv_sll (const BtorSimBitVector *a, const BtorSimBitVector *b)
 
   uint64_t shift;
   BtorSimBitVector *res;
-  shift = btorsim_bv_to_uint64 (b);
+  if (b->width <= 64)
+    shift = btorsim_bv_to_uint64 (b);
+  else
+  {
+    if (btorsim_bv_get_num_leading_zeros(b) < (b->width - 64))
+      return btorsim_bv_new (a->width);
+    BtorSimBitVector *lower = btorsim_bv_slice(b, 63, 0);
+    shift = btorsim_bv_to_uint64 (lower);
+    btorsim_bv_free(lower);
+  }
   res   = sll_bv (a, shift);
   return res;
 }
@@ -1692,7 +1701,15 @@ btorsim_bv_srl (const BtorSimBitVector *a, const BtorSimBitVector *b)
   BTORSIM_BV_TYPE v;
 
   res   = btorsim_bv_new (a->width);
-  shift = btorsim_bv_to_uint64 (b);
+  if (b->width <= 64)
+    shift = btorsim_bv_to_uint64 (b);
+  else
+  {
+    if (btorsim_bv_get_num_leading_zeros(b) < (b->width - 64)) return res;
+    BtorSimBitVector *lower = btorsim_bv_slice(b, 63, 0);
+    shift = btorsim_bv_to_uint64 (lower);
+    btorsim_bv_free(lower);
+  }
   if (shift >= a->width) return res;
 
   k    = shift % BTORSIM_BV_TYPE_BW;
