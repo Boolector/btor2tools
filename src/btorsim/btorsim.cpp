@@ -240,7 +240,6 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_one:
     case BTOR2_TAG_ones:
     case BTOR2_TAG_or:
-    case BTOR2_TAG_output:
     case BTOR2_TAG_redand:
     case BTOR2_TAG_redor:
     case BTOR2_TAG_redxor:
@@ -271,6 +270,7 @@ parse_model_line (Btor2Line *l)
 
     case BTOR2_TAG_fair:
     case BTOR2_TAG_justice:
+    case BTOR2_TAG_output:
     case BTOR2_TAG_rol:
     case BTOR2_TAG_ror:
     case BTOR2_TAG_saddo:
@@ -635,15 +635,6 @@ simulate (int64_t id)
         res.array_state = args[0].array_state->write(args[1].bv_state, args[2].bv_state);
         {Btor2Line *mem = btor2parser_get_line_by_id (model, l->args[0]);
         msg (4, "write %s[%s] <- %s", mem->symbol ? mem->symbol : std::to_string(mem->id).c_str(), btorsim_bv_to_string(args[1].bv_state).c_str(), btorsim_bv_to_string(args[2].bv_state).c_str());}
-        break;
-      case BTOR2_TAG_output:
-        assert (l->nargs == 1);
-        assert (res.type == args[0].type);
-        if (res.type == BtorSimState::Type::ARRAY) {
-          res.array_state = args[0].array_state->copy();
-        } else {
-          res.bv_state = btorsim_bv_copy (args[0].bv_state);
-        }
         break;
       default:
         die ("can not randomly simulate operator '%s' at line %" PRId64,
