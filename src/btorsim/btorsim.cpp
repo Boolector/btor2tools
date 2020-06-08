@@ -905,9 +905,6 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
         continue;
       // only add named signals
       if (!l->symbol) continue;
-      // ignore names starting with '$' in yosys format mode
-      // (these are internally generated and won't mean anything to the user)
-      if (symbol_fmt && l->symbol[0] == '$') continue;
       vcd_writer->add_value_change (k, i, current_state[i]);
     }
 }
