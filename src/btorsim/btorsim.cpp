@@ -1463,7 +1463,6 @@ parse_sat_witness ()
   int64_t k = 0;
   while (parse_frame (k)) k++;
 
-  // if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
   msg (1, "finished parsing k = %" PRId64 " frames", k);
   if (dump_vcd) vcd_writer->update_time(k+1);
 
@@ -1489,8 +1488,6 @@ parse_unknown_witness ()
   int64_t k = 0;
 
   while (parse_frame (k)) k++;
-
-  // if (!found_initial_frame && states.size() > 0) parse_error ("initial frame missing");
 
   report ();
   if (print_trace) printf (".\n"), fflush (stdout);
