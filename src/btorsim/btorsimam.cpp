@@ -29,7 +29,7 @@ uint64_t BtorSimArrayModel::get_random_init(uint64_t idx) const
 
 BtorSimBitVector* BtorSimArrayModel::read (const BtorSimBitVector* index)
 {
-	assert (index->width <= index_width);
+	assert (index->width == index_width);
 	std::string i = btorsim_bv_to_string(index);
 	if (!data[i])
 	{
@@ -43,7 +43,7 @@ BtorSimBitVector* BtorSimArrayModel::read (const BtorSimBitVector* index)
 
 BtorSimArrayModel* BtorSimArrayModel::write(const BtorSimBitVector* index, const BtorSimBitVector* element)
 {
-	assert (index->width <= index_width);
+	assert (index->width == index_width);
 	assert (element->width == element_width);
 	std::string i = btorsim_bv_to_string (index);
 	BtorSimArrayModel* res = copy();
@@ -56,7 +56,7 @@ BtorSimArrayModel* BtorSimArrayModel::write(const BtorSimBitVector* index, const
 
 BtorSimBitVector* BtorSimArrayModel::check(const BtorSimBitVector* index) const
 {
-	assert (index->width <= index_width);
+	assert (index->width == index_width);
 	std::string i = btorsim_bv_to_string(index);
 	if (data.find(i) != data.end())
 		return btorsim_bv_copy(data.at(i));
