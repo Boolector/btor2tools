@@ -1222,11 +1222,6 @@ parse_state_part (int64_t k)
       if (strlen (constant.start) != state->sort.bitvec.width)
         charno = constant_columno,
         parse_error ("expected constant of width '%u'", state->sort.bitvec.width);
-      if (current_state[state->id].is_set() && nexts[state->id])
-        parse_error ("state %" PRId64 " id %" PRId64 " assigned twice in frame %" PRId64,
-                     state_pos,
-                     state->id,
-                     k);
     }
     else
     {
@@ -1256,33 +1251,36 @@ parse_state_part (int64_t k)
     if (state->sort.tag == BTOR2_TAG_SORT_array)
       idx = btorsim_bv_char_to_bv (array_index.start);
     BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
-    Btor2Line *init       = inits[state->id];
-    if (init && nexts[state->id])
+    if (k==0)
     {
-      msg (4, "init & next for state %" PRId64, state->id);
-      assert (init->nargs == 2);
-      assert (init->args[0] == state->id);
-      BtorSimState tmp = simulate (init->args[1]);
-      if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
+      Btor2Line *init = inits[state->id];
+      if (init && nexts[state->id])
       {
-        assert (tmp.type == BtorSimState::Type::BITVEC);
-        if (btorsim_bv_compare (val, tmp.bv_state))
-          parse_error (
-              "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
-      }
-      else
-      {
-        assert(tmp.type == BtorSimState::Type::ARRAY);
-        BtorSimBitVector* element = tmp.array_state->check(idx);
-        if (element)
+        msg (4, "init & next for state %" PRId64, state->id);
+        assert (init->nargs == 2);
+        assert (init->args[0] == state->id);
+        BtorSimState tmp = simulate (init->args[1]);
+        if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
         {
-          if (btorsim_bv_compare (val, element))
-          parse_error (
-              "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
-          btorsim_bv_free (element);
+          assert (tmp.type == BtorSimState::Type::BITVEC);
+          if (btorsim_bv_compare (val, tmp.bv_state))
+            parse_error (
+                "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
         }
+        else
+        {
+          assert(tmp.type == BtorSimState::Type::ARRAY);
+          BtorSimBitVector* element = tmp.array_state->check(idx);
+          if (element)
+          {
+            if (btorsim_bv_compare (val, element))
+            parse_error (
+                "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
+            btorsim_bv_free (element);
+          }
+        }
+        tmp.remove();
       }
-      tmp.remove();
     }
     lineno++;
     charno = saved_charno;
