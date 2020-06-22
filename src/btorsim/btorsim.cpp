@@ -739,42 +739,70 @@ initialize_states (int32_t randomly)
     Btor2Line *init = inits[state->id];
     if (!current_state[state->id].is_set())
     { // can be set in parse_state_part from witness
-      if (init)
-      {
-        assert (init->nargs == 2);
-        assert (init->args[0] == state->id);
-        BtorSimState update = simulate (init->args[1]);
-        update_current_state(state->id, update);
-      }
-      else
-      {
-        switch (current_state[state->id].type) {
-          case BtorSimState::Type::BITVEC:
-            assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
+      switch (current_state[state->id].type) {
+        case BtorSimState::Type::BITVEC:
+        {
+          assert (state->sort.tag == BTOR2_TAG_SORT_bitvec);
+          if (init)
+          {
+            assert (init->nargs == 2);
+            assert (init->args[0] == state->id);
+            BtorSimState update = simulate (init->args[1]);
+            assert (update.type == BtorSimState::Type::BITVEC);
+            update_current_state(state->id, update);
+          }
+          else
+          {
             BtorSimBitVector* bv;
             if (randomly)
               bv = btorsim_bv_new_random (&rng, state->sort.bitvec.width);
             else
               bv = btorsim_bv_new (state->sort.bitvec.width);
             update_current_state (state->id, bv);
-            break;
-          case BtorSimState::Type::ARRAY:
-            assert (state->sort.tag == BTOR2_TAG_SORT_array);
-            {
-              Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
-              Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
-              assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
-              assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
-              BtorSimArrayModel* am = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
-              if (randomly) {
-                am->random_seed = btorsim_rng_rand(&rng);
-              }
-              update_current_state (state->id, am);
-            }
-            break;
-          default:
-            die ("uninitialized current_state %" PRId64, state->id);
+          }
         }
+        break;
+        case BtorSimState::Type::ARRAY:
+          assert (state->sort.tag == BTOR2_TAG_SORT_array);
+          if (init)
+          {
+            assert (init->nargs == 2);
+            assert (init->args[0] == state->id);
+            BtorSimState update = simulate (init->args[1]);
+            switch (update.type) {
+              case BtorSimState::Type::ARRAY:
+                update_current_state(state->id, update);
+                break;
+              case BtorSimState::Type::BITVEC:
+              {
+                Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
+                Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
+                assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
+                assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
+                BtorSimArrayModel* am = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
+                am->const_init = update.bv_state;
+                update_current_state (state->id, am);
+              }
+              break;
+              default:
+                die ("bad result simulating %" PRId64, init->args[1]);
+            }
+          }
+          else
+          {
+            Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
+            Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
+            assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
+            assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
+            BtorSimArrayModel* am = new BtorSimArrayModel(li->sort.bitvec.width, le->sort.bitvec.width);
+            if (randomly) {
+              am->random_seed = btorsim_rng_rand(&rng);
+            }
+            update_current_state (state->id, am);
+          }
+        break;
+        default:
+          die ("uninitialized current_state %" PRId64, state->id);
       }
     }
     if (print_trace && !init)

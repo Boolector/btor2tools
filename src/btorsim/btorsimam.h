@@ -21,13 +21,14 @@
 #include "btorsimbv.h"
 
 struct BtorSimArrayModel {
-	uint64_t index_width;
-	uint64_t element_width;
-	uint64_t random_seed;
+	uint64_t index_width = 0;
+	uint64_t element_width = 0;
+	uint64_t random_seed = 0;
+	BtorSimBitVector* const_init = nullptr;
 
 	std::unordered_map<std::string, BtorSimBitVector *> data;
 
-	BtorSimArrayModel(uint64_t index_width, uint64_t element_width) : index_width(index_width), element_width(element_width), random_seed(0) {};
+	BtorSimArrayModel(uint64_t index_width, uint64_t element_width) : index_width(index_width), element_width(element_width) {};
 	BtorSimArrayModel(uint64_t index_width, uint64_t element_width, uint64_t random_seed) : index_width(index_width), element_width(element_width), random_seed(random_seed) {};
 	~BtorSimArrayModel();
 	BtorSimArrayModel(const BtorSimArrayModel&) = delete;

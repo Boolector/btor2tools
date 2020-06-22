@@ -20,6 +20,8 @@ BtorSimArrayModel::~BtorSimArrayModel()
 		btorsim_bv_free(i.second);
 		data[i.first] = nullptr;
 	}
+	if (const_init)
+		btorsim_bv_free(const_init);
 }
 
 uint64_t BtorSimArrayModel::get_random_init(uint64_t idx) const
@@ -35,6 +37,8 @@ BtorSimBitVector* BtorSimArrayModel::read (const BtorSimBitVector* index)
 	{
 		if (random_seed)
 			data[i] = btorsim_bv_uint64_to_bv (get_random_init(btorsim_bv_to_uint64(index)), element_width);
+		else if (const_init)
+			data[i] = btorsim_bv_copy(const_init);
 		else
 			data[i] = btorsim_bv_new (element_width);
 	}
@@ -74,6 +78,7 @@ BtorSimArrayModel* BtorSimArrayModel::copy() const
 
 bool BtorSimArrayModel::operator==(const BtorSimArrayModel& other) const
 {
+	if (const_init && btorsim_bv_compare(const_init, other.const_init) != 0) return false;
 	for (auto i: data)
 		if (other.data.find(i.first)==other.data.end() || btorsim_bv_compare(other.data.at(i.first), i.second) != 0)
 		{

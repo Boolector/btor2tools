@@ -32,9 +32,11 @@ void BtorSimState::update(BtorSimState& s)
 	switch (type)
 	{
 	case ARRAY:
+		assert (s.type == ARRAY);
 		update(s.array_state);
 		break;
 	case BtorSimState::Type::BITVEC:
+		assert (s.type == BITVEC);
 		update(s.bv_state);
 		break;
 	default:
