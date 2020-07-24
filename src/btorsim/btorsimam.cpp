@@ -29,16 +29,32 @@ uint64_t BtorSimArrayModel::get_random_init(uint64_t idx) const
 	return (random_seed + idx)*(random_seed + idx + 1)/2 + idx;
 }
 
+BtorSimBitVector* BtorSimArrayModel::get_const_init() const
+{
+	if (const_init)
+		return btorsim_bv_copy(const_init);
+	else
+		return nullptr;
+}
+
+BtorSimArrayModel* BtorSimArrayModel::set_const_init(const BtorSimBitVector* init) const
+{
+	BtorSimArrayModel* res = copy();
+	if (res->const_init) btorsim_bv_free(res->const_init);
+	res->const_init = btorsim_bv_copy (init);
+	return res;
+}
+
 BtorSimBitVector* BtorSimArrayModel::read (const BtorSimBitVector* index)
 {
 	assert (index->width == index_width);
 	std::string i = btorsim_bv_to_string(index);
 	if (!data[i])
 	{
-		if (random_seed)
-			data[i] = btorsim_bv_uint64_to_bv (get_random_init(btorsim_bv_to_uint64(index)), element_width);
-		else if (const_init)
+		if (const_init)
 			data[i] = btorsim_bv_copy(const_init);
+		else if (random_seed)
+			data[i] = btorsim_bv_uint64_to_bv (get_random_init(btorsim_bv_to_uint64(index)), element_width);
 		else
 			data[i] = btorsim_bv_new (element_width);
 	}
@@ -73,12 +89,13 @@ BtorSimArrayModel* BtorSimArrayModel::copy() const
 	BtorSimArrayModel* res = new BtorSimArrayModel(index_width, element_width);
 	for (auto i: data)
 		res->data[i.first] = btorsim_bv_copy(i.second);
+	if (const_init) res->const_init = btorsim_bv_copy(const_init);
 	return res;
 }
 
 bool BtorSimArrayModel::operator==(const BtorSimArrayModel& other) const
 {
-	if (const_init && btorsim_bv_compare(const_init, other.const_init) != 0) return false;
+	if (const_init && btorsim_bv_compare(const_init, other.const_init) != 0 && data.size() != ((size_t)1) << index_width) return false;
 	for (auto i: data)
 		if (other.data.find(i.first)==other.data.end() || btorsim_bv_compare(other.data.at(i.first), i.second) != 0)
 		{
