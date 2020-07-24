@@ -1165,6 +1165,11 @@ parse_assignment ()
     index_columno = columno + 1;
     while ((ch = next_char ()) == '0' || ch == '1')
       BTOR2_PUSH_STACK (array_index, ch);
+    if (ch == '*')
+    {
+      BTOR2_PUSH_STACK (array_index, ch);
+      ch = next_char();
+    }
     if (ch != ']') parse_error ("expected ] after index");
     if (BTOR2_EMPTY_STACK (array_index)) parse_error ("empty index");
     BTOR2_PUSH_STACK (array_index, 0);
@@ -1212,7 +1217,12 @@ parse_state_part (int64_t k)
     lineno--;
     if (state_pos >= (int64_t) states.size())
       parse_error ("less than %" PRId64 " states defined", state_pos);
-    if (BTOR2_EMPTY_STACK (array_index))
+    Btor2Line *state = states[state_pos];
+    assert (state);
+    assert (0 <= state->id), assert (state->id < num_format_lines);
+    bool is_const_init = false;
+    if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
+    {
       if (BTOR2_EMPTY_STACK (symbol))
         msg (4,
              "state assignment '%" PRId64 " %s' at time frame %" PRId64,
@@ -1226,7 +1236,18 @@ parse_state_part (int64_t k)
              constant.start,
              symbol.start,
              k);
+      assert (BTOR2_EMPTY_STACK (array_index));
+      if (strlen (constant.start) != state->sort.bitvec.width)
+        charno = constant_columno,
+        parse_error ("expected constant of width '%u'", state->sort.bitvec.width);
+    }
     else
+    {
+      if BTOR2_EMPTY_STACK (array_index)
+      {
+        BTOR2_PUSH_STACK (array_index, '*');
+        BTOR2_PUSH_STACK (array_index, 0);
+      }
       if (BTOR2_EMPTY_STACK (symbol))
         msg (4,
              "state assignment '%" PRId64 " [%s] %s' at time frame %" PRId64,
@@ -1242,23 +1263,13 @@ parse_state_part (int64_t k)
              constant.start,
              symbol.start,
              k);
-    Btor2Line *state = states[state_pos];
-    assert (state);
-    assert (0 <= state->id), assert (state->id < num_format_lines);
-    if (state->sort.tag == BTOR2_TAG_SORT_bitvec)
-    {
-      if (strlen (constant.start) != state->sort.bitvec.width)
-        charno = constant_columno,
-        parse_error ("expected constant of width '%u'", state->sort.bitvec.width);
-    }
-    else
-    {
       assert(state->sort.tag == BTOR2_TAG_SORT_array);
       Btor2Line *li = btor2parser_get_line_by_id (model, state->sort.array.index);
       Btor2Line *le = btor2parser_get_line_by_id (model, state->sort.array.element);
       assert(li->sort.tag == BTOR2_TAG_SORT_bitvec);
       assert(le->sort.tag == BTOR2_TAG_SORT_bitvec);
-      if (strlen (array_index.start) != li->sort.bitvec.width)
+      is_const_init = BTOR2_COUNT_STACK (array_index) == 2 && BTOR2_PEEK_STACK(array_index, 0) == '*';
+      if (strlen (array_index.start) != li->sort.bitvec.width && !is_const_init)
       {
         charno = index_columno;
         parse_error ("expected index of width '%u'", state->sort.array.index);
@@ -1276,7 +1287,7 @@ parse_state_part (int64_t k)
     }
 
     BtorSimBitVector *idx = 0;
-    if (state->sort.tag == BTOR2_TAG_SORT_array)
+    if (state->sort.tag == BTOR2_TAG_SORT_array && !is_const_init)
       idx = btorsim_bv_char_to_bv (array_index.start);
     BtorSimBitVector *val = btorsim_bv_char_to_bv (constant.start);
     if (k==0)
@@ -1297,8 +1308,17 @@ parse_state_part (int64_t k)
         }
         else
         {
-          assert(tmp.type == BtorSimState::Type::ARRAY);
-          BtorSimBitVector* element = tmp.array_state->check(idx);
+          BtorSimBitVector* element;
+          if (is_const_init)
+          {
+            assert(tmp.type == BtorSimState::Type::BITVEC);
+            element = btorsim_bv_copy (tmp.bv_state);
+          }
+          else
+          {
+            assert(tmp.type == BtorSimState::Type::ARRAY);
+            element = tmp.array_state->check(idx);
+          }
           if (element)
           {
             if (btorsim_bv_compare (val, element))
@@ -1327,7 +1347,7 @@ parse_state_part (int64_t k)
       }
       else
       {
-        BtorSimBitVector * tmp = current_state[state->id].array_state->check(idx);
+        BtorSimBitVector * tmp = is_const_init ? current_state[state->id].array_state->get_const_init() : current_state[state->id].array_state->check(idx);
         if (tmp && btorsim_bv_compare(val, tmp))
         {
           parse_error ("incompatible assignment for state %" PRId64 " id %" PRId64
@@ -1336,7 +1356,7 @@ parse_state_part (int64_t k)
                        state->id,
                        k);
         }
-        btorsim_bv_free(tmp);
+        if (tmp) btorsim_bv_free(tmp);
       }
     }
     if(state->sort.tag == BTOR2_TAG_SORT_bitvec)
@@ -1346,9 +1366,16 @@ parse_state_part (int64_t k)
       assert (current_state[state->id].type == BtorSimState::Type::ARRAY);
       BtorSimState tmp;
       tmp.type = BtorSimState::Type::ARRAY;
-      tmp.array_state = current_state[state->id].array_state->write(idx, val);
+      if (is_const_init)
+      {
+        tmp.array_state = current_state[state->id].array_state->set_const_init(val);
+      }
+      else
+      {
+        tmp.array_state = current_state[state->id].array_state->write(idx, val);
+        btorsim_bv_free(idx);
+      }
       update_current_state (state->id, tmp);
-      btorsim_bv_free(idx);
       btorsim_bv_free(val);
     }
   }

@@ -35,6 +35,8 @@ struct BtorSimArrayModel {
 	BtorSimArrayModel& operator=(const BtorSimArrayModel&) = delete;
 
 	uint64_t get_random_init(uint64_t idx) const;
+	BtorSimBitVector* get_const_init() const;
+	BtorSimArrayModel* set_const_init(const BtorSimBitVector* init) const;
 	BtorSimBitVector* read(const BtorSimBitVector* index);
 	BtorSimArrayModel* write(const BtorSimBitVector* index, const BtorSimBitVector* element);
 	BtorSimBitVector* check(const BtorSimBitVector* index) const;
