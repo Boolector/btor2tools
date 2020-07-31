@@ -12,11 +12,12 @@
  */
 
 #include "btorsimbv.h"
-#include "util/btor2mem.h"
 
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
+
+#include "util/btor2mem.h"
 
 #define BTOR2_MASK_REM_BITS(bv)                            \
   ((((BTORSIM_BV_TYPE) 1 << (BTORSIM_BV_TYPE_BW - 1)) - 1) \

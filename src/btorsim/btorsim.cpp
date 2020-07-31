@@ -31,7 +31,7 @@
 /*------------------------------------------------------------------------*/
 
 static void
-die (const char* m, ...)
+die (const char *m, ...)
 {
   fflush (stdout);
   fputs ("*** 'btorsim' error: ", stderr);
@@ -47,7 +47,7 @@ static int32_t verbosity;
 static int32_t print_states;
 
 static void
-msg (int32_t level, const char* m, ...)
+msg (int32_t level, const char *m, ...)
 {
   if (level > verbosity) return;
   assert (m);
@@ -160,46 +160,48 @@ parse_model_line (Btor2Line *l)
 {
   switch (l->tag)
   {
-    case BTOR2_TAG_bad:
-    {
-      int64_t i = (int64_t) bads.size();
+    case BTOR2_TAG_bad: {
+      int64_t i = (int64_t) bads.size ();
       msg (2, "bad %" PRId64 " at line %" PRId64, i, l->lineno);
-      bads.push_back(l);
-      reached_bads.push_back(-1);
+      bads.push_back (l);
+      reached_bads.push_back (-1);
       num_unreached_bads++;
     }
     break;
 
-    case BTOR2_TAG_constraint:
-    {
-      int64_t i = (int64_t) constraints.size();
+    case BTOR2_TAG_constraint: {
+      int64_t i = (int64_t) constraints.size ();
       msg (2, "constraint %" PRId64 " at line %" PRId64, i, l->lineno);
-      constraints.push_back(l);
+      constraints.push_back (l);
     }
     break;
 
     case BTOR2_TAG_init: inits[l->args[0]] = l; break;
 
-    case BTOR2_TAG_input:
-    {
-      int64_t i = (int64_t) inputs.size();
+    case BTOR2_TAG_input: {
+      int64_t i = (int64_t) inputs.size ();
       if (l->symbol)
-        msg (2, "input %" PRId64 " '%s' at line %" PRId64, i, l->symbol, l->lineno);
+        msg (2,
+             "input %" PRId64 " '%s' at line %" PRId64,
+             i,
+             l->symbol,
+             l->lineno);
       else
         msg (2, "input %" PRId64 " at line %" PRId64, i, l->lineno);
-      inputs.push_back(l);
+      inputs.push_back (l);
     }
     break;
 
     case BTOR2_TAG_next: nexts[l->args[0]] = l; break;
 
-    case BTOR2_TAG_sort:
-    {
+    case BTOR2_TAG_sort: {
       switch (l->sort.tag)
       {
         case BTOR2_TAG_SORT_bitvec:
-          msg (
-              2, "sort bitvec %u at line %" PRId64, l->sort.bitvec.width, l->lineno);
+          msg (2,
+               "sort bitvec %u at line %" PRId64,
+               l->sort.bitvec.width,
+               l->lineno);
           break;
         case BTOR2_TAG_SORT_array:
         default:
@@ -212,14 +214,17 @@ parse_model_line (Btor2Line *l)
     }
     break;
 
-    case BTOR2_TAG_state:
-    {
-      int64_t i = (int64_t) states.size();
+    case BTOR2_TAG_state: {
+      int64_t i = (int64_t) states.size ();
       if (l->symbol)
-        msg (2, "state %" PRId64 " '%s' at line %" PRId64, i, l->symbol, l->lineno);
+        msg (2,
+             "state %" PRId64 " '%s' at line %" PRId64,
+             i,
+             l->symbol,
+             l->lineno);
       else
         msg (2, "state %" PRId64 " at line %" PRId64, i, l->lineno);
-      states.push_back(l);
+      states.push_back (l);
     }
     break;
 
@@ -285,7 +290,8 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_usubo:
     case BTOR2_TAG_write:
     default:
-      die ("parse error in '%s' at line %" PRId64 ": unsupported '%" PRId64 " %s%s'",
+      die ("parse error in '%s' at line %" PRId64 ": unsupported '%" PRId64
+           " %s%s'",
            model_path,
            l->lineno,
            l->id,
@@ -303,13 +309,13 @@ parse_model ()
   if (!btor2parser_read_lines (model, model_file))
     die ("parse error in '%s' at %s", model_path, btor2parser_error (model));
   num_format_lines = btor2parser_max_id (model);
-  inits.resize(num_format_lines, nullptr);
-  nexts.resize(num_format_lines, nullptr);
+  inits.resize (num_format_lines, nullptr);
+  nexts.resize (num_format_lines, nullptr);
   Btor2LineIterator it = btor2parser_iter_init (model);
   Btor2Line *line;
   while ((line = btor2parser_iter_next (&it))) parse_model_line (line);
 
-  for (size_t i = 0; i < states.size(); i++)
+  for (size_t i = 0; i < states.size (); i++)
   {
     Btor2Line *state = states[i];
     if (!nexts[state->id])
@@ -561,7 +567,7 @@ initialize_inputs (int64_t k, int32_t randomize)
 {
   msg (1, "initializing inputs @%" PRId64, k);
   if (print_trace) printf ("@%" PRId64 "\n", k);
-  for (size_t i = 0; i < inputs.size(); i++)
+  for (size_t i = 0; i < inputs.size (); i++)
   {
     Btor2Line *input = inputs[i];
     uint32_t width   = input->sort.bitvec.width;
@@ -587,7 +593,7 @@ initialize_states (int32_t randomly)
 {
   msg (1, "initializing states at #0");
   if (print_trace) printf ("#0\n");
-  for (size_t i = 0; i < states.size(); i++)
+  for (size_t i = 0; i < states.size (); i++)
   {
     Btor2Line *state = states[i];
     assert (0 <= state->id), assert (state->id < num_format_lines);
@@ -642,7 +648,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
 #endif
     btorsim_bv_free (bv);
   }
-  for (size_t i = 0; i < states.size(); i++)
+  for (size_t i = 0; i < states.size (); i++)
   {
     Btor2Line *state = states[i];
     assert (0 <= state->id), assert (state->id < num_format_lines);
@@ -669,13 +675,14 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
 
   if (constraints_violated < 0)
   {
-    for (size_t i = 0; i < constraints.size(); i++)
+    for (size_t i = 0; i < constraints.size (); i++)
     {
       Btor2Line *constraint = constraints[i];
       BtorSimBitVector *bv  = current_state[constraint->args[0]];
       if (!btorsim_bv_is_zero (bv)) continue;
       msg (1,
-           "constraint(%" PRId64 ") '%" PRId64 " constraint %" PRId64 "' violated at time %" PRId64,
+           "constraint(%" PRId64 ") '%" PRId64 " constraint %" PRId64
+           "' violated at time %" PRId64,
            i,
            constraint->id,
            constraint->args[0],
@@ -686,7 +693,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
 
   if (constraints_violated < 0)
   {
-    for (size_t i = 0; i < bads.size(); i++)
+    for (size_t i = 0; i < bads.size (); i++)
     {
       int64_t r = reached_bads[i];
       if (r >= 0) continue;
@@ -700,7 +707,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
       if (!--num_unreached_bads)
         msg (1,
              "all %" PRId64 " bad state properties reached",
-             (int64_t) bads.size());
+             (int64_t) bads.size ());
     }
   }
 }
@@ -711,7 +718,7 @@ transition (int64_t k)
   msg (1, "transition %" PRId64, k);
   for (int64_t i = 0; i < num_format_lines; i++) delete_current_state (i);
   if (print_trace && print_states) printf ("#%" PRId64 "\n", k);
-  for (size_t i = 0; i < states.size(); i++)
+  for (size_t i = 0; i < states.size (); i++)
   {
     Btor2Line *state = states[i];
     assert (0 <= state->id), assert (state->id < num_format_lines);
@@ -732,22 +739,22 @@ transition (int64_t k)
 static void
 report ()
 {
-  if (verbosity && num_unreached_bads < (int64_t) bads.size())
+  if (verbosity && num_unreached_bads < (int64_t) bads.size ())
   {
     printf ("[btorsim] reached bad state properties {");
-    for (size_t i = 0; i < bads.size(); i++)
+    for (size_t i = 0; i < bads.size (); i++)
     {
       int64_t r = reached_bads[i];
       if (r >= 0) printf (" b%lu@%" PRId64, i, r);
     }
     printf (" }\n");
   }
-  else if (!bads.empty())
+  else if (!bads.empty ())
     msg (1, "no bad state property reached");
 
   if (constraints_violated >= 0)
     msg (1, "constraints violated at time %" PRId64, constraints_violated);
-  else if (!constraints.empty())
+  else if (!constraints.empty ())
     msg (1, "constraints always satisfied");
 }
 
@@ -840,7 +847,8 @@ parse_error (const char *msg, ...)
   fflush (stdout);
   assert (witness_path);
   fprintf (stderr,
-           "*** 'btorsim' parse error in '%s' at line %" PRId64 " column %" PRId64 ": ",
+           "*** 'btorsim' parse error in '%s' at line %" PRId64
+           " column %" PRId64 ": ",
            witness_path,
            lineno,
            columno);
@@ -967,10 +975,10 @@ parse_state_part (int64_t k)
   while ((state_pos = parse_assignment ()) >= 0)
   {
     int64_t saved_charno = charno;
-    charno            = 1;
+    charno               = 1;
     assert (lineno > 1);
     lineno--;
-    if (state_pos >= (int64_t) states.size())
+    if (state_pos >= (int64_t) states.size ())
       parse_error ("less than %" PRId64 " states defined", state_pos);
     if (BTOR2_EMPTY_STACK (symbol))
       msg (4,
@@ -992,7 +1000,8 @@ parse_state_part (int64_t k)
       parse_error ("expected constant of width '%u'", state->sort.bitvec.width);
     assert (0 <= state->id), assert (state->id < num_format_lines);
     if (current_state[state->id] && nexts[state->id])
-      parse_error ("state %" PRId64 " id %" PRId64 " assigned twice in frame %" PRId64,
+      parse_error ("state %" PRId64 " id %" PRId64
+                   " assigned twice in frame %" PRId64,
                    state_pos,
                    state->id,
                    k);
@@ -1004,8 +1013,9 @@ parse_state_part (int64_t k)
       assert (init->args[0] == state->id);
       BtorSimBitVector *tmp = simulate (init->args[1]);
       if (btorsim_bv_compare (val, tmp))
-        parse_error (
-            "incompatible initialized state %" PRId64 " id %" PRId64, state_pos, state->id);
+        parse_error ("incompatible initialized state %" PRId64 " id %" PRId64,
+                     state_pos,
+                     state->id);
       btorsim_bv_free (tmp);
     }
     lineno++;
@@ -1034,10 +1044,10 @@ parse_input_part (int64_t k)
   while ((input_pos = parse_assignment ()) >= 0)
   {
     int64_t saved_charno = charno;
-    charno            = 1;
+    charno               = 1;
     assert (lineno > 1);
     lineno--;
-    if (input_pos >= (int64_t) inputs.size())
+    if (input_pos >= (int64_t) inputs.size ())
       parse_error ("less than %" PRId64 " defined", input_pos);
     if (BTOR2_EMPTY_STACK (symbol))
       msg (4,
@@ -1059,7 +1069,8 @@ parse_input_part (int64_t k)
       parse_error ("expected constant of width '%u'", input->sort.bitvec.width);
     assert (0 <= input->id), assert (input->id < num_format_lines);
     if (current_state[input->id])
-      parse_error ("input %" PRId64 " id %" PRId64 " assigned twice in frame %" PRId64,
+      parse_error ("input %" PRId64 " id %" PRId64
+                   " assigned twice in frame %" PRId64,
                    input_pos,
                    input->id,
                    k);
@@ -1113,12 +1124,13 @@ parse_sat_witness ()
     }
     if (type == 'b')
     {
-      if (bad >= (int64_t) bads.size())
+      if (bad >= (int64_t) bads.size ())
         parse_error ("invalid bad state property number %" PRId64, bad);
       msg (3,
-           "... claims to be witness of bad state property number 'b%" PRId64 "'",
+           "... claims to be witness of bad state property number 'b%" PRId64
+           "'",
            bad);
-      claimed_bad_witnesses.push_back(bad);
+      claimed_bad_witnesses.push_back (bad);
     }
     else
       parse_error ("can not handle justice properties yet");
@@ -1134,13 +1146,14 @@ parse_sat_witness ()
   report ();
   if (print_trace) printf (".\n"), fflush (stdout);
 
-  for (size_t i = 0; i < claimed_bad_witnesses.size(); i++)
+  for (size_t i = 0; i < claimed_bad_witnesses.size (); i++)
   {
     int64_t bad_pos = claimed_bad_witnesses[i];
     int64_t bound   = reached_bads[bad_pos];
-    Btor2Line *l = bads[bad_pos];
+    Btor2Line *l    = bads[bad_pos];
     if (bound < 0)
-      die ("claimed bad state property 'b%" PRId64 "' id %" PRId64 " not reached",
+      die ("claimed bad state property 'b%" PRId64 "' id %" PRId64
+           " not reached",
            bad_pos,
            l->id);
   }
@@ -1246,7 +1259,8 @@ parse_and_check_all_witnesses ()
   BTOR2_RELEASE_STACK (constant);
   BTOR2_RELEASE_STACK (symbol);
   msg (1,
-       "finished parsing %" PRId64 " witnesses after reading %" PRId64 " bytes (%.1f MB)",
+       "finished parsing %" PRId64 " witnesses after reading %" PRId64
+       " bytes (%.1f MB)",
        count_witnesses,
        charno,
        charno / (double) (1l << 20));
@@ -1342,14 +1356,14 @@ main (int32_t argc, char **argv)
   assert (model_path);
   msg (1, "reading BTOR model from '%s'", model_path);
   parse_model ();
-  if (fake_bad >= (int64_t) bads.size())
+  if (fake_bad >= (int64_t) bads.size ())
     die ("invalid faked bad state property number %" PRId64, fake_bad);
-  if (fake_justice >= (int64_t) justices.size())
+  if (fake_justice >= (int64_t) justices.size ())
     die ("invalid faked justice property number %" PRId64, fake_justice);
   if (close_model_file && fclose (model_file))
     die ("can not close model file '%s'", model_path);
-  current_state.resize(num_format_lines, nullptr);
-  next_state.resize(num_format_lines, nullptr);
+  current_state.resize (num_format_lines, nullptr);
+  next_state.resize (num_format_lines, nullptr);
   if (random_mode)
   {
     if (r < 0) r = 20;
