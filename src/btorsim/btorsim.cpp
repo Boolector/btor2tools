@@ -912,6 +912,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
     }
   }
 
+  /* Check additional bads from info file */
   for (auto it: extra_constraints)
   {
     BtorSimState s = current_state[it.first];
@@ -1165,6 +1166,7 @@ parse_assignment ()
     index_columno = columno + 1;
     while ((ch = next_char ()) == '0' || ch == '1')
       BTOR2_PUSH_STACK (array_index, ch);
+    /* btormc trace compatibility: btormc --trace-gen-full represents 'initialize all array elements' as <id> [*] <value> */
     if (ch == '*')
     {
       BTOR2_PUSH_STACK (array_index, ch);
@@ -1243,6 +1245,7 @@ parse_state_part (int64_t k)
     }
     else
     {
+      /* pono trace compatibility: pono represents 'initialize all array elements' as <id> <value> (same syntax as for vector assignment, but id is for a state of sort array) */
       if BTOR2_EMPTY_STACK (array_index)
       {
         BTOR2_PUSH_STACK (array_index, '*');

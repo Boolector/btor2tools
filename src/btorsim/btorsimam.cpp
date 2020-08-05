@@ -24,6 +24,10 @@ BtorSimArrayModel::~BtorSimArrayModel()
 		btorsim_bv_free(const_init);
 }
 
+/* Get a 'random' value for an uninitialized element
+ * This function must always return the same value for a given index and random_seed.
+ * Otherwise reading the same element twice might not give the same value.
+ */
 uint64_t BtorSimArrayModel::get_random_init(uint64_t idx) const
 {
 	return (random_seed + idx)*(random_seed + idx + 1)/2 + idx;
@@ -176,7 +180,6 @@ bool BtorSimArrayModel::operator!=(const BtorSimArrayModel& other) const
 
 BtorSimBitVector* btorsim_am_eq(const BtorSimArrayModel* a, const BtorSimArrayModel* b)
 {
-	//TODO: is comparing arrays of different dimensions false or error?
 	assert (a), assert (b);
 	assert (a->element_width == b->element_width);
 	assert (a->index_width == b->index_width);
@@ -189,7 +192,6 @@ BtorSimBitVector* btorsim_am_eq(const BtorSimArrayModel* a, const BtorSimArrayMo
 
 BtorSimBitVector* btorsim_am_neq(const BtorSimArrayModel* a, const BtorSimArrayModel* b)
 {
-	//TODO: is comparing arrays of different dimensions false or error?
 	assert(a), assert(b);
 	assert (a->element_width == b->element_width);
 	assert (a->index_width == b->index_width);
