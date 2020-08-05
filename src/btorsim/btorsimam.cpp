@@ -95,12 +95,75 @@ BtorSimArrayModel* BtorSimArrayModel::copy() const
 
 bool BtorSimArrayModel::operator==(const BtorSimArrayModel& other) const
 {
-	if (const_init && btorsim_bv_compare(const_init, other.const_init) != 0 && data.size() != ((size_t)1) << index_width) return false;
-	for (auto i: data)
-		if (other.data.find(i.first)==other.data.end() || btorsim_bv_compare(other.data.at(i.first), i.second) != 0)
+	if (data.size() != ((size_t)1) << index_width) // if all elements were accessed, init values are irrelevant, otherwise they must match
+	{
+		if (!const_init != !other.const_init) return false; // one initialized but not the other
+		if (const_init)
 		{
-			return false;
+			if (btorsim_bv_compare(const_init, other.const_init) != 0) return false;
 		}
+		else
+		{
+			if (random_seed != other.random_seed) return false;
+			// when randomize mode is off, two unrelated uninitialized arrays will compare equal, but with randomize they may not.
+			// this is unavoidable as there is currently no way to know if an array was derived from another or not.
+		}
+	}
+	for (auto i: data) // check all accessed elements in this have same value in other
+	{
+		if (other.data.find(i.first)==other.data.end()) // data is not in other, but may be same as initial value if an extra read was called on this
+		{
+			if (other.const_init) // init value is from init statement
+			{
+				if(btorsim_bv_compare(i.second, other.const_init))
+					return false;
+			}
+			else if (other.random_seed) // init value is from randomize
+			{
+				BtorSimBitVector* idx = btorsim_bv_char_to_bv(i.first.c_str());
+				BtorSimBitVector* initval = btorsim_bv_uint64_to_bv (other.get_random_init(btorsim_bv_to_uint64(idx)), other.element_width);
+				int is_different_from_random_init = btorsim_bv_compare(i.second, initval);
+				btorsim_bv_free(idx);
+				btorsim_bv_free(initval);
+				if (is_different_from_random_init) return false;
+			}
+			else // init value is zero
+			{
+				if (!btorsim_bv_is_zero(i.second))
+					return false;
+			}
+		}
+		else if (btorsim_bv_compare(other.data.at(i.first), i.second) != 0)
+			return false;
+	}
+	// now do exactly the same but the other way around, because there may be some values in other that are not in this
+	for (auto i: other.data) // check all accessed elements in other have same value in this
+	{
+		if (data.find(i.first)==data.end()) // data is not in other, but may be same as initial value if an extra read was called on this
+		{
+			if (const_init) // init value is from init statement
+			{
+				if(btorsim_bv_compare(i.second,const_init))
+					return false;
+			}
+			else if (random_seed) // init value is from randomize
+			{
+				BtorSimBitVector* idx = btorsim_bv_char_to_bv(i.first.c_str());
+				BtorSimBitVector* initval = btorsim_bv_uint64_to_bv (get_random_init(btorsim_bv_to_uint64(idx)), element_width);
+				int is_different_from_random_init = btorsim_bv_compare(i.second, initval);
+				btorsim_bv_free(idx);
+				btorsim_bv_free(initval);
+				if (is_different_from_random_init) return false;
+			}
+			else // init value is zero
+			{
+				if (!btorsim_bv_is_zero(i.second))
+					return false;
+			}
+		}
+		else if (btorsim_bv_compare(data.at(i.first), i.second) != 0)
+			return false;
+	}
 	return true;
 }
 
