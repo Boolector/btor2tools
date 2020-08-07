@@ -14,7 +14,8 @@
 
 #include "btorsimhelpers.h"
 
-void die (const char* m, ...)
+void
+die (const char *m, ...)
 {
   fflush (stdout);
   fputs ("*** 'btorsim' error: ", stderr);
@@ -26,8 +27,8 @@ void die (const char* m, ...)
   exit (1);
 }
 
-
-void msg (int32_t level, const char* m, ...)
+void
+msg (int32_t level, const char *m, ...)
 {
   if (level > verbosity) return;
   assert (m);
@@ -39,27 +40,32 @@ void msg (int32_t level, const char* m, ...)
   printf ("\n");
 }
 
-// this would ideally be in btorsimbv.c but that's C and doesn't know std::string
-std::string btorsim_bv_to_string (const BtorSimBitVector *bv)
+// this would ideally be in btorsimbv.c but that's C and doesn't know what
+// std::string is
+std::string
+btorsim_bv_to_string (const BtorSimBitVector *bv)
 {
-  std::string sval("");
+  std::string sval ("");
   for (int j = bv->width - 1; j >= 0; j--)
-    sval += std::to_string(btorsim_bv_get_bit (bv, j));
+    sval += std::to_string (btorsim_bv_get_bit (bv, j));
   return sval;
 }
 
-std::string btorsim_bv_to_hex_string (const BtorSimBitVector *bv)
+std::string
+btorsim_bv_to_hex_string (const BtorSimBitVector *bv)
 {
-  char * bv_char = btorsim_bv_to_hex_char(bv);
-  std::string res(bv_char);
+  char *bv_char = btorsim_bv_to_hex_char (bv);
+  std::string res (bv_char);
   BTOR2_DELETE (bv_char);
   return res;
 }
 
-Btor2Sort *get_sort(Btor2Line* l, Btor2Parser *model)
+Btor2Sort *
+get_sort (Btor2Line *l, Btor2Parser *model)
 {
   Btor2Sort *sort;
-  switch (l->tag) {
+  switch (l->tag)
+  {
     case BTOR2_TAG_output:
     case BTOR2_TAG_bad:
     case BTOR2_TAG_constraint:
@@ -67,14 +73,12 @@ Btor2Sort *get_sort(Btor2Line* l, Btor2Parser *model)
     // case BTOR2_TAG_justice:
       {
         Btor2Line *ls = btor2parser_get_line_by_id (model, l->args[0]);
-        sort = &(ls->sort);
+        sort          = &(ls->sort);
       }
       break;
-    default:
-      sort = &(l->sort);
-      break;
+    default: sort = &(l->sort); break;
   }
-  assert(sort);
-  assert(sort->id);
+  assert (sort);
+  assert (sort->id);
   return sort;
 }

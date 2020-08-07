@@ -12,32 +12,41 @@
 #ifndef BTOR2STATE_H_INCLUDED
 #define BTOR2STATE_H_INCLUDED
 
-#include "btorsimbv.h"
 #include "btorsimam.h"
+#include "btorsimbv.h"
 
-/* Typed union container class for state values, can point to either a BitVector or an ArrayModel. */
-struct BtorSimState {
-	enum Type {INVALID, BITVEC, ARRAY};
-	Type type;
-	union {
-		BtorSimBitVector *bv_state;
-		BtorSimArrayModel *array_state;
-	};
+/* Typed union container class for state values, can point to either a BitVector
+ * or an ArrayModel. */
+struct BtorSimState
+{
+  enum Type
+  {
+    INVALID,
+    BITVEC,
+    ARRAY
+  };
+  Type type;
+  union
+  {
+    BtorSimBitVector *bv_state;
+    BtorSimArrayModel *array_state;
+  };
 
-	BtorSimState(): type(INVALID), bv_state(nullptr) {};
+  BtorSimState () : type (INVALID), bv_state (nullptr){};
 
-	/* change the pointed-to value, frees memory of old value
-	*  does not make a copy of the argument! the input pointer becomes owned by the state
-	*/
-	void update(BtorSimBitVector *bv);
-	void update(BtorSimArrayModel *am);
-	void update(BtorSimState& s);
+  /* change the pointed-to value, frees memory of old value
+   * does not make a copy of the argument! the input pointer becomes owned by
+   * the state
+   */
+  void update (BtorSimBitVector *bv);
+  void update (BtorSimArrayModel *am);
+  void update (BtorSimState &s);
 
-	// free memory of value, replace with nullptr
-	void remove();
+  // free memory of value, replace with nullptr
+  void remove ();
 
-	// state is not null
-	bool is_set();
+  // state is not null
+  bool is_set ();
 };
 
 #endif

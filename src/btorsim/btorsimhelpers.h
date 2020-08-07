@@ -15,23 +15,24 @@
 #ifndef BTOR2HELP_H_INCLUDED
 #define BTOR2HELP_H_INCLUDED
 
+#include <cassert>
+#include <cstdarg>
 #include <string>
 #include <vector>
-#include <cstdarg>
-#include <cassert>
 
 #include "btor2parser/btor2parser.h"
 #include "btorsimbv.h"
 
 extern int32_t verbosity;
 
-void die (const char* m, ...);
-void msg (int32_t level, const char* m, ...);
+void die (const char *m, ...);
+void msg (int32_t level, const char *m, ...);
 
 // get the sort for a line (have to go through argument for some operators)
-Btor2Sort *get_sort(Btor2Line* l, Btor2Parser *model);
+Btor2Sort *get_sort (Btor2Line *l, Btor2Parser *model);
 
-// same as btorsim_bv_to_char and btorsim_bv_to_hex_char but return value is std::string
+// same as btorsim_bv_to_char and btorsim_bv_to_hex_char but return value is
+// std::string
 std::string btorsim_bv_to_string (const BtorSimBitVector *bv);
 std::string btorsim_bv_to_hex_string (const BtorSimBitVector *bv);
 
