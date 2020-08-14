@@ -112,8 +112,8 @@ bool
 BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
 {
   if (data.size () != ((size_t) 1) << index_width)
-	// if all elements were accessed, init values are irrelevant,
-	// otherwise they must match
+  // if all elements were accessed, init values are irrelevant,
+  // otherwise they must match
   {
     if (!const_init != !other.const_init)
       return false;  // one initialized but not the other
@@ -133,7 +133,8 @@ BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
   // check all accessed elements in this have same value in other
   {
     if (other.data.find (i.first) == other.data.end ())
-    // data is not in other, but may be same as initial value if an extra read was called on this
+    // data is not in other, but may be same as initial value if an extra read
+    // was called on this
     {
       if (other.const_init)  // init value is from init statement
       {
@@ -165,7 +166,8 @@ BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
   // check all accessed elements in other have same value in this
   {
     if (data.find (i.first) == data.end ())
-    // data is not in other, but may be same as initial value if an extra read was called on this
+    // data is not in this, but may be same as initial value if an extra read
+    // was called on other
     {
       if (const_init)  // init value is from init statement
       {

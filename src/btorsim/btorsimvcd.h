@@ -70,15 +70,15 @@ class BtorSimVCDWriter
   std::map<int64_t, ClkType> clocks;  // signals for which clock behavior of the
                                       // given type should be added
 
-/* retrieve the identifier for an array element (creates new if not previously seen) */
-  std::string get_am_identifier (
-      int64_t id, std::string);
+  /* retrieve the identifier for an array element (creates new if not previously
+   * seen) */
+  std::string get_am_identifier (int64_t id, std::string);
 
-  /* retrieve the identifier for a vector state (creates new if not previously seen) */
-  std::string get_bv_identifier (
-      int64_t id);
+  /* retrieve the identifier for a vector state (creates new if not previously
+   * seen) */
+  std::string get_bv_identifier (int64_t id);
 
-      /* create a new identifier (used by get_*_identifier) */
+  /* create a new identifier (used by get_*_identifier) */
   std::string generate_next_identifier ();
 
   ModuleTreeNode* sort_names (Btor2Parser* model, std::string topname);  //

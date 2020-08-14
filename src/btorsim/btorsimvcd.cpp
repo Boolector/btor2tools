@@ -225,6 +225,7 @@ BtorSimVCDWriter::write_node_header (ModuleTreeNode* top)
     }
     else
       for (auto j : am_identifiers)
+      {
         if (j.first.first == id)
         {
           std::string idx      = j.first.second;
@@ -232,6 +233,7 @@ BtorSimVCDWriter::write_node_header (ModuleTreeNode* top)
           vcd_file << "$var wire " << width << " " << am_ident << " " << symbol
                    << "<" << std::hex << idx << std::dec << "> $end\n";
         }
+      }
   }
   for (ModuleTreeNode* s : top->submodules)
   {
@@ -332,6 +334,7 @@ BtorSimVCDWriter::add_value_change (int64_t k, int64_t id, BtorSimState state)
       {
         update_time (k);
         for (auto it : state.array_state->data)
+        {
           if (!prev_value[id].array_state
               || prev_value[id].array_state->data.find (it.first)
                      == prev_value[id].array_state->data.end ()
@@ -343,6 +346,7 @@ BtorSimVCDWriter::add_value_change (int64_t k, int64_t id, BtorSimState state)
             if (it.second->width > 1) sval += " ";
             value_changes.push_back (sval + get_am_identifier (id, it.first));
           }
+        }
         prev_value[id].update (state.array_state->copy ());
       }
     }

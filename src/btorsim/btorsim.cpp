@@ -1046,6 +1046,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
   }
 
   if (dump_vcd)
+  {
     for (int i = 0; i < num_format_lines; i++)
     {
       Btor2Line *l = btor2parser_get_line_by_id (model, i);
@@ -1060,6 +1061,7 @@ simulate_step (int64_t k, int32_t randomize_states_that_are_inputs)
       if (!l->symbol) continue;
       vcd_writer->add_value_change (k, i, current_state[i]);
     }
+  }
 }
 
 static void
