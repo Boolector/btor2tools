@@ -778,7 +778,7 @@ print_state_or_input (int64_t id, int64_t pos, int64_t step, bool is_input)
   switch (current_state[id].type)
   {
     case BtorSimState::Type::BITVEC:
-      printf ("%lu ", pos);
+      printf ("%" PRId64 " ", pos);
       btorsim_bv_print_without_new_line (current_state[id].bv_state);
       if (l->symbol)
         printf (" %s%s%" PRId64, l->symbol, is_input ? "@" : "#", step);
@@ -787,7 +787,7 @@ print_state_or_input (int64_t id, int64_t pos, int64_t step, bool is_input)
     case BtorSimState::Type::ARRAY:
       for (auto e : current_state[id].array_state->data)
       {
-        printf ("%lu [%s]", pos, e.first.c_str ());
+        printf ("%" PRId64 " [%s]", pos, e.first.c_str ());
         btorsim_bv_print_without_new_line (e.second);
         if (l->symbol)
           printf (" %s%s%" PRId64, l->symbol, is_input ? "@" : "#", step);
