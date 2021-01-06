@@ -108,33 +108,14 @@ BtorSimArrayModel::copy () const
   return res;
 }
 
-bool
-BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
+bool data_is_subset(const BtorSimArrayModel& self, const BtorSimArrayModel& other)
 {
-  if (data.size () != ((size_t) 1) << index_width)
-  // if all elements were accessed, init values are irrelevant,
-  // otherwise they must match
-  {
-    if (!const_init != !other.const_init)
-      return false;  // one initialized but not the other
-    if (const_init)
-    {
-      if (btorsim_bv_compare (const_init, other.const_init) != 0) return false;
-    }
-    else
-    {
-      if (random_seed != other.random_seed) return false;
-      // when randomize mode is off, two unrelated uninitialized arrays will
-      // compare equal, but with randomize they may not. this is ok because
-      // both are within the behavior allowed by model and witness.
-    }
-  }
-  for (auto i : data)
-  // check all accessed elements in this have same value in other
+  for (auto i : self.data)
+  // check all accessed elements in self have same value in other
   {
     if (other.data.find (i.first) == other.data.end ())
     // data is not in other, but may be same as initial value if an extra read
-    // was called on this
+    // was called on self
     {
       if (other.const_init)  // init value is from init statement
       {
@@ -160,39 +141,32 @@ BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
     else if (btorsim_bv_compare (other.data.at (i.first), i.second) != 0)
       return false;
   }
-  // now do exactly the same but the other way around, because there may be some
-  // values in other that are not in this
-  for (auto i : other.data)
-  // check all accessed elements in other have same value in this
-  {
-    if (data.find (i.first) == data.end ())
-    // data is not in this, but may be same as initial value if an extra read
-    // was called on other
-    {
-      if (const_init)  // init value is from init statement
-      {
-        if (btorsim_bv_compare (i.second, const_init)) return false;
-      }
-      else if (random_seed)  // init value is from randomize
-      {
-        BtorSimBitVector* idx     = btorsim_bv_char_to_bv (i.first.c_str ());
-        BtorSimBitVector* initval = btorsim_bv_uint64_to_bv (
-            get_random_init (btorsim_bv_to_uint64 (idx)), element_width);
-        int is_different_from_random_init =
-            btorsim_bv_compare (i.second, initval);
-        btorsim_bv_free (idx);
-        btorsim_bv_free (initval);
-        if (is_different_from_random_init) return false;
-      }
-      else  // init value is zero
-      {
-        if (!btorsim_bv_is_zero (i.second)) return false;
-      }
-    }
-    else if (btorsim_bv_compare (data.at (i.first), i.second) != 0)
-      return false;
-  }
   return true;
+}
+
+bool
+BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
+{
+  if (data.size () != ((size_t) 1) << index_width)
+  // if all elements were accessed, init values are irrelevant,
+  // otherwise they must match
+  {
+    if (!const_init != !other.const_init)
+      return false;  // one initialized but not the other
+    if (const_init)
+    {
+      if (btorsim_bv_compare (const_init, other.const_init) != 0) return false;
+    }
+    else
+    {
+      if (random_seed != other.random_seed) return false;
+      // when randomize mode is off, two unrelated uninitialized arrays will
+      // compare equal, but with randomize they may not. this is ok because
+      // both are within the behavior allowed by model and witness.
+    }
+  }
+  // init values match; check accessed data is same
+  return data_is_subset(*this, other) && data_is_subset(other, *this);
 }
 
 bool
