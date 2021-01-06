@@ -70,7 +70,7 @@ get_sort (Btor2Line *l, Btor2Parser *model)
     case BTOR2_TAG_bad:
     case BTOR2_TAG_constraint:
     case BTOR2_TAG_fair:
-    // case BTOR2_TAG_justice:
+      // case BTOR2_TAG_justice:
       {
         Btor2Line *ls = btor2parser_get_line_by_id (model, l->args[0]);
         sort          = &(ls->sort);

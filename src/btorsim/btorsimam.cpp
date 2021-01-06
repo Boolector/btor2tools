@@ -108,7 +108,8 @@ BtorSimArrayModel::copy () const
   return res;
 }
 
-bool data_is_subset(const BtorSimArrayModel& self, const BtorSimArrayModel& other)
+bool
+data_is_subset (const BtorSimArrayModel& self, const BtorSimArrayModel& other)
 {
   for (auto i : self.data)
   // check all accessed elements in self have same value in other
@@ -166,7 +167,7 @@ BtorSimArrayModel::operator== (const BtorSimArrayModel& other) const
     }
   }
   // init values match; check accessed data is same
-  return data_is_subset(*this, other) && data_is_subset(other, *this);
+  return data_is_subset (*this, other) && data_is_subset (other, *this);
 }
 
 bool
