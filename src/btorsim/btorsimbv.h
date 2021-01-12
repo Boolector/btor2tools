@@ -16,6 +16,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#if __cplusplus
+extern "C" {
+#endif
+
 #include "btorsimrng.h"
 #include "util/btor2stack.h"
 
@@ -130,6 +135,7 @@ BtorSimBitVector *btorsim_bv_dec (const BtorSimBitVector *bv);
 
 BtorSimBitVector *btorsim_bv_redor (const BtorSimBitVector *bv);
 BtorSimBitVector *btorsim_bv_redand (const BtorSimBitVector *bv);
+BtorSimBitVector *btorsim_bv_redxor (const BtorSimBitVector *bv);
 
 BtorSimBitVector *btorsim_bv_add (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);
@@ -228,5 +234,9 @@ bool btorsim_bv_is_umulo (const BtorSimBitVector *bv0,
                           const BtorSimBitVector *bv1);
 
 /*------------------------------------------------------------------------*/
+
+#if __cplusplus
+}
+#endif
 
 #endif

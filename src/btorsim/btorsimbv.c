@@ -12,11 +12,12 @@
  */
 
 #include "btorsimbv.h"
-#include "util/btor2mem.h"
 
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
+
+#include "util/btor2mem.h"
 
 #define BTOR2_MASK_REM_BITS(bv)                            \
   ((((BTORSIM_BV_TYPE) 1 << (BTORSIM_BV_TYPE_BW - 1)) - 1) \
@@ -1246,6 +1247,28 @@ btorsim_bv_redor (const BtorSimBitVector *bv)
   return res;
 }
 
+BtorSimBitVector *
+btorsim_bv_redxor (const BtorSimBitVector *bv)
+{
+  assert (bv);
+
+  uint32_t i;
+  uint32_t bit;
+  BtorSimBitVector *res;
+
+  res = btorsim_bv_new (1);
+  assert (rem_bits_zero_dbg (res));
+  bit = btorsim_bv_get_bit (bv, 0);
+  for (i = 1; i < bv->width; i++)
+  {
+    bit = bit ^ btorsim_bv_get_bit (bv, i);
+  }
+  btorsim_bv_set_bit (res, 0, bit);
+
+  assert (rem_bits_zero_dbg (res));
+  return res;
+}
+
 /*------------------------------------------------------------------------*/
 
 BtorSimBitVector *
@@ -1651,8 +1674,17 @@ btorsim_bv_sll (const BtorSimBitVector *a, const BtorSimBitVector *b)
 
   uint64_t shift;
   BtorSimBitVector *res;
-  shift = btorsim_bv_to_uint64 (b);
-  res   = sll_bv (a, shift);
+  if (b->width <= 64)
+    shift = btorsim_bv_to_uint64 (b);
+  else
+  {
+    if (btorsim_bv_get_num_leading_zeros (b) < (b->width - 64))
+      return btorsim_bv_new (a->width);
+    BtorSimBitVector *lower = btorsim_bv_slice (b, 63, 0);
+    shift                   = btorsim_bv_to_uint64 (lower);
+    btorsim_bv_free (lower);
+  }
+  res = sll_bv (a, shift);
   return res;
 }
 
@@ -1669,8 +1701,16 @@ btorsim_bv_srl (const BtorSimBitVector *a, const BtorSimBitVector *b)
   BtorSimBitVector *res;
   BTORSIM_BV_TYPE v;
 
-  res   = btorsim_bv_new (a->width);
-  shift = btorsim_bv_to_uint64 (b);
+  res = btorsim_bv_new (a->width);
+  if (b->width <= 64)
+    shift = btorsim_bv_to_uint64 (b);
+  else
+  {
+    if (btorsim_bv_get_num_leading_zeros (b) < (b->width - 64)) return res;
+    BtorSimBitVector *lower = btorsim_bv_slice (b, 63, 0);
+    shift                   = btorsim_bv_to_uint64 (lower);
+    btorsim_bv_free (lower);
+  }
   if (shift >= a->width) return res;
 
   k    = shift % BTORSIM_BV_TYPE_BW;
@@ -1703,7 +1743,7 @@ btorsim_bv_sra (const BtorSimBitVector *a, const BtorSimBitVector *b)
   not_a  = btorsim_bv_not (a);
   srl2   = btorsim_bv_srl (not_a, b);
   res    = btorsim_bv_is_true (not_a) ? btorsim_bv_not (srl2)
-                                   : btorsim_bv_copy (srl1);
+                                      : btorsim_bv_copy (srl1);
   btorsim_bv_free (sign_b);
   btorsim_bv_free (srl1);
   btorsim_bv_free (srl2);
@@ -1869,19 +1909,19 @@ btorsim_bv_sdiv (const BtorSimBitVector *a, const BtorSimBitVector *b)
   }
   else
   {
-    sign_a = btorsim_bv_slice (a, a->width - 1, a->width - 1);
-    sign_b = btorsim_bv_slice (b, b->width - 1, b->width - 1);
-    xor    = btorsim_bv_xor (sign_a, sign_b);
-    neg_a  = btorsim_bv_neg (a);
-    neg_b  = btorsim_bv_neg (b);
-    cond_a = btorsim_bv_is_true (sign_a) ? btorsim_bv_copy (neg_a)
-                                         : btorsim_bv_copy (a);
-    cond_b = btorsim_bv_is_true (sign_b) ? btorsim_bv_copy (neg_b)
-                                         : btorsim_bv_copy (b);
+    sign_a   = btorsim_bv_slice (a, a->width - 1, a->width - 1);
+    sign_b   = btorsim_bv_slice (b, b->width - 1, b->width - 1);
+    xor      = btorsim_bv_xor (sign_a, sign_b);
+    neg_a    = btorsim_bv_neg (a);
+    neg_b    = btorsim_bv_neg (b);
+    cond_a   = btorsim_bv_is_true (sign_a) ? btorsim_bv_copy (neg_a)
+                                           : btorsim_bv_copy (a);
+    cond_b   = btorsim_bv_is_true (sign_b) ? btorsim_bv_copy (neg_b)
+                                           : btorsim_bv_copy (b);
     udiv     = btorsim_bv_udiv (cond_a, cond_b);
     neg_udiv = btorsim_bv_neg (udiv);
     res      = btorsim_bv_is_true (xor) ? btorsim_bv_copy (neg_udiv)
-                                   : btorsim_bv_copy (udiv);
+                                        : btorsim_bv_copy (udiv);
     btorsim_bv_free (sign_a);
     btorsim_bv_free (sign_b);
     btorsim_bv_free (xor);
@@ -1938,14 +1978,14 @@ btorsim_bv_srem (const BtorSimBitVector *a, const BtorSimBitVector *b)
     neg_a  = btorsim_bv_neg (a);
     neg_b  = btorsim_bv_neg (b);
     /* normalize a and b if necessary */
-    cond_a = btorsim_bv_is_true (sign_a) ? btorsim_bv_copy (neg_a)
-                                         : btorsim_bv_copy (a);
-    cond_b = btorsim_bv_is_true (sign_b) ? btorsim_bv_copy (neg_b)
-                                         : btorsim_bv_copy (b);
+    cond_a   = btorsim_bv_is_true (sign_a) ? btorsim_bv_copy (neg_a)
+                                           : btorsim_bv_copy (a);
+    cond_b   = btorsim_bv_is_true (sign_b) ? btorsim_bv_copy (neg_b)
+                                           : btorsim_bv_copy (b);
     urem     = btorsim_bv_urem (cond_a, cond_b);
     neg_urem = btorsim_bv_neg (urem);
     res      = btorsim_bv_is_true (sign_a) ? btorsim_bv_copy (neg_urem)
-                                      : btorsim_bv_copy (urem);
+                                           : btorsim_bv_copy (urem);
     btorsim_bv_free (sign_a);
     btorsim_bv_free (sign_b);
     btorsim_bv_free (neg_a);
