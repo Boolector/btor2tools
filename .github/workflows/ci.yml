@@ -14,11 +14,12 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Configure
-        run: ./configure.sh -g
+        run: ./configure.sh
 
       - name: Build
         working-directory: build
         run: make -j2
 
-      - name: Run Tests
-        run: test/runtests.sh
+      - name: Install
+        working-directory: build
+        run: make install
