@@ -1,0 +1,21 @@
+on: [push, pull_request]
+name: CI
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - name: Configure
+        run: ./configure.sh -g
+
+      - name: Build
+        run: make -j2
+
+      - name: Run Tests
+        run: test/runtests.sh
