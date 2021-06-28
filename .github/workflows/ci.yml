@@ -11,6 +11,8 @@ jobs:
 
     steps:
 
+      - uses: actions/checkout@v2
+
       - name: Configure
         run: ./configure.sh -g
 
