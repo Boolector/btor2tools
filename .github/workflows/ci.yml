@@ -1,0 +1,28 @@
+on: [push, pull_request]
+name: CI
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$(pwd)/install
+
+      - name: Build
+        working-directory: build
+        run: make -j2
+
+      - name: Install
+        working-directory: build
+        run: make install
