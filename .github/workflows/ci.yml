@@ -17,6 +17,7 @@ jobs:
         run: ./configure.sh -g
 
       - name: Build
+        working-directory: build
         run: make -j2
 
       - name: Run Tests
