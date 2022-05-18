@@ -1245,7 +1245,7 @@ check_state_init (Btor2Parser *bfr, int64_t state_id, int64_t init_id)
   line = id2line_bfr (bfr, init_id);
 
   // 'init_id' is the highest id we will see when traversing down
-  size_t size = (init_id + 1) * sizeof (char);
+  size_t size = (labs (init_id) + 1) * sizeof (char);
   cache       = btor2parser_malloc (size);
   memset (cache, 0, size);
 
