@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <cstdarg>
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
