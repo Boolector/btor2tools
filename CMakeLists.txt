@@ -14,6 +14,7 @@ include(GNUInstallDirs)
 
 option(ASAN              "Compile with ASAN support" OFF)
 option(BUILD_BTOR2AIGER  "Build btor2aiger binary" OFF)
+option(BUILD_TOOLS       "Build btorsim, catbtor, btorsplit binaries" OFF)
 option(CHECK             "Enable assertions for optimized builds" OFF)
 option(BUILD_SHARED_LIBS "Build as shared library" ON)
 
