@@ -175,3 +175,16 @@ main(int argc, char *argv[])
 
   return EXIT_SUCCESS;
 }
+
+#if defined(__wasm)
+extern "C" {
+	// FIXME: WASI does not currently support exceptions.
+	void* __cxa_allocate_exception(size_t thrown_size) throw() {
+		return malloc(thrown_size);
+	}
+	bool __cxa_uncaught_exception() throw();
+	void __cxa_throw(void* thrown_exception, struct std::type_info * tinfo, void (*dest)(void*)) {
+		std::terminate();
+	}
+}
+#endif
