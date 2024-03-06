@@ -10,23 +10,28 @@ install(
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-add_executable(btorsim
-  btorsim/btorsimam.cpp
-  btorsim/btorsimstate.cpp
-  btorsim/btorsimvcd.cpp
-  btorsim/btorsimhelpers.cpp
-  btorsim/btorsim.cpp
-  btorsim/btorsimbv.c
-  btorsim/btorsimrng.c
-)
-target_include_directories(btorsim PRIVATE .)
-target_link_libraries(btorsim btor2parser)
-target_compile_options(btorsim PRIVATE -Wall -Wfatal-errors)
-install(TARGETS btorsim DESTINATION ${CMAKE_INSTALL_BINDIR})
+if (BUILD_TOOLS)
+  add_executable(btorsim
+    btorsim/btorsimam.cpp
+    btorsim/btorsimstate.cpp
+    btorsim/btorsimvcd.cpp
+    btorsim/btorsimhelpers.cpp
+    btorsim/btorsim.cpp
+    btorsim/btorsimbv.c
+    btorsim/btorsimrng.c
+  )
+  target_include_directories(btorsim PRIVATE .)
+  target_link_libraries(btorsim btor2parser)
+  target_compile_options(btorsim PRIVATE -Wall -Wfatal-errors)
+  install(TARGETS btorsim DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-add_executable(catbtor catbtor.c)
-target_link_libraries(catbtor btor2parser)
-install(TARGETS catbtor DESTINATION ${CMAKE_INSTALL_BINDIR})
+  add_executable(catbtor catbtor.c)
+  target_link_libraries(catbtor btor2parser)
+  install(TARGETS catbtor DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+  add_executable(btorsplit btorsplit.cpp)
+  install(TARGETS btorsplit DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
 if(BUILD_BTOR2AIGER)
   add_executable(btor2aiger
@@ -38,6 +43,3 @@ if(BUILD_BTOR2AIGER)
   target_link_libraries(btor2aiger btor2parser Boolector::boolector)
   install(TARGETS btor2aiger DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
-
-add_executable(btorsplit btorsplit.cpp)
-install(TARGETS btorsplit DESTINATION ${CMAKE_INSTALL_BINDIR})
