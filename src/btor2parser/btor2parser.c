@@ -449,7 +449,15 @@ check_sorts_bfr (Btor2Parser *bfr, Btor2Line *l)
   uint32_t i;
   if (l->tag != BTOR2_TAG_justice)
   {
-    for (i = 0; i < l->nargs; i++) args[i] = id2line_bfr (bfr, l->args[i]);
+    for (i = 0; i < l->nargs; i++)
+    {
+      args[i] = id2line_bfr (bfr, l->args[i]);
+      // Disallow negative array ids. This is only valid for bit-vectors.
+      if (args[i]->sort.tag == BTOR2_TAG_SORT_array && l->args[i] < 0)
+      {
+        return perr_bfr (bfr, "negated arrays not allowed");
+      }
+    }
   }
 
   switch (l->tag)
