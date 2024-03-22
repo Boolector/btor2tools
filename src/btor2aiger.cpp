@@ -417,8 +417,7 @@ add_state_to_aiger (Btor *btor,
     sym = boolector_aig_get_symbol (amgr, state_bits[i]);
     if (next_bits)
     {
-      reset_val = init_bits ? (init_bits[i] > 1 ? state_bits[i] : init_bits[i])
-                            : state_bits[i];
+      reset_val = init_bits && init_bits[i] <= 1 ? init_bits[i] : state_bits[i];
       aiger_add_latch (aig, state_bits[i], next_bits[i], sym);
       aiger_add_reset (aig, state_bits[i], reset_val);
     }
