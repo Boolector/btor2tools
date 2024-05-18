@@ -243,6 +243,7 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_implies:
     case BTOR2_TAG_inc:
     case BTOR2_TAG_ite:
+    case BTOR2_TAG_iff:
     case BTOR2_TAG_mul:
     case BTOR2_TAG_nand:
     case BTOR2_TAG_neg:
