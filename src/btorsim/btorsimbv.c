@@ -1736,15 +1736,15 @@ btorsim_bv_sra (const BtorSimBitVector *a, const BtorSimBitVector *b)
   assert (a->len == b->len);
   assert (a->width == b->width);
 
-  BtorSimBitVector *res, *sign_b, *srl1, *srl2, *not_a;
+  BtorSimBitVector *res, *sign_a, *srl1, *srl2, *not_a;
 
-  sign_b = btorsim_bv_slice (b, b->width - 1, b->width - 1);
+  sign_a = btorsim_bv_slice (a, a->width - 1, a->width - 1);
   srl1   = btorsim_bv_srl (a, b);
   not_a  = btorsim_bv_not (a);
   srl2   = btorsim_bv_srl (not_a, b);
-  res    = btorsim_bv_is_true (not_a) ? btorsim_bv_not (srl2)
+  res    = btorsim_bv_is_true (sign_a) ? btorsim_bv_not (srl2)
                                       : btorsim_bv_copy (srl1);
-  btorsim_bv_free (sign_b);
+  btorsim_bv_free (sign_a);
   btorsim_bv_free (srl1);
   btorsim_bv_free (srl2);
   btorsim_bv_free (not_a);
