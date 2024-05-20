@@ -1754,6 +1754,38 @@ btorsim_bv_sra (const BtorSimBitVector *a, const BtorSimBitVector *b)
 }
 
 BtorSimBitVector *
+btorsim_bv_rol (const BtorSimBitVector *a, const BtorSimBitVector *b) {
+  BtorSimBitVector *width = btorsim_bv_uint64_to_bv(a->width, a->width);
+  BtorSimBitVector *rev = btorsim_bv_sub(width, b);
+
+  BtorSimBitVector *sll_part = btorsim_bv_sll(a, b);
+  BtorSimBitVector *srl_part = btorsim_bv_srl(a, rev);
+  BtorSimBitVector *res = btorsim_bv_or(sll_part, srl_part);
+
+  btorsim_bv_free(width);
+  btorsim_bv_free(rev);
+  btorsim_bv_free(sll_part);
+  btorsim_bv_free(srl_part);
+  return res;
+}
+
+BtorSimBitVector *
+btorsim_bv_ror (const BtorSimBitVector *a, const BtorSimBitVector *b) {
+  BtorSimBitVector *width = btorsim_bv_uint64_to_bv(a->width, a->width);
+  BtorSimBitVector *rev = btorsim_bv_sub(width, b);
+
+  BtorSimBitVector *srl_part = btorsim_bv_srl(a, b);
+  BtorSimBitVector *sll_part = btorsim_bv_sll(a, rev);
+  BtorSimBitVector *res = btorsim_bv_or(srl_part, sll_part);
+
+  btorsim_bv_free(width);
+  btorsim_bv_free(rev);
+  btorsim_bv_free(srl_part);
+  btorsim_bv_free(sll_part);
+  return res;
+}
+
+BtorSimBitVector *
 btorsim_bv_mul (const BtorSimBitVector *a, const BtorSimBitVector *b)
 {
   assert (a);

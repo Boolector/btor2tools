@@ -191,6 +191,12 @@ BtorSimBitVector *btorsim_bv_srl (const BtorSimBitVector *a,
 BtorSimBitVector *btorsim_bv_sra (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);
 
+BtorSimBitVector *btorsim_bv_rol (const BtorSimBitVector *a,
+                                  const BtorSimBitVector *b);
+
+BtorSimBitVector *btorsim_bv_ror (const BtorSimBitVector *a,
+                                  const BtorSimBitVector *b);
+
 BtorSimBitVector *btorsim_bv_mul (const BtorSimBitVector *a,
                                   const BtorSimBitVector *b);
 
