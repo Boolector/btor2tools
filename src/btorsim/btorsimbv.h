@@ -212,6 +212,9 @@ BtorSimBitVector *btorsim_bv_urem (const BtorSimBitVector *a,
 BtorSimBitVector *btorsim_bv_srem (const BtorSimBitVector *a,
                                    const BtorSimBitVector *b);
 
+BtorSimBitVector *btorsim_bv_smod (const BtorSimBitVector *a,
+                                   const BtorSimBitVector *b);
+
 BtorSimBitVector *btorsim_bv_ite (const BtorSimBitVector *c,
                                   const BtorSimBitVector *t,
                                   const BtorSimBitVector *e);

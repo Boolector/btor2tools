@@ -2034,6 +2034,70 @@ btorsim_bv_srem (const BtorSimBitVector *a, const BtorSimBitVector *b)
 }
 
 BtorSimBitVector *
+btorsim_bv_smod (const BtorSimBitVector *a, const BtorSimBitVector *b)
+{
+  assert (a);
+  assert (b);
+  assert (a->len == b->len);
+  assert (a->width == b->width);
+
+  BtorSimBitVector *res = 0, *not_b, *sign_a, *sign_b, *neg_a, *neg_b, *add;
+  BtorSimBitVector *cond_a, *cond_b, *urem, *neg_urem, *add_urem, *add_neg_urem;
+  bool a_positive, b_positive;
+
+  if (a->width == 1)
+  {
+    not_b = btorsim_bv_not (b);
+    res   = btorsim_bv_and (a, not_b);
+    btorsim_bv_free (not_b);
+  }
+  else
+  {
+    sign_a = btorsim_bv_slice (a, a->width - 1, a->width - 1);
+    sign_b = btorsim_bv_slice (b, b->width - 1, b->width - 1);
+    a_positive = !btorsim_bv_is_true (sign_a);
+    b_positive = !btorsim_bv_is_true (sign_b);
+
+    neg_a  = btorsim_bv_neg (a);
+    neg_b  = btorsim_bv_neg (b);
+    cond_a = a_positive ? btorsim_bv_copy (a)
+                        : btorsim_bv_copy (neg_a);
+    cond_b = b_positive ? btorsim_bv_copy (b)
+                        : btorsim_bv_copy (neg_b);
+
+
+    urem     = btorsim_bv_urem (cond_a, cond_b);
+    add = btorsim_bv_is_zero(urem) ? btorsim_bv_zero(b->width)
+                                   : btorsim_bv_copy(b);
+
+    neg_urem = btorsim_bv_neg (urem);
+    add_urem = btorsim_bv_add(urem, add);
+    add_neg_urem = btorsim_bv_add(neg_urem, add);
+
+    res =  a_positive &&  b_positive ? btorsim_bv_copy(urem)
+        : !a_positive &&  b_positive ? btorsim_bv_copy(add_neg_urem)
+        :  a_positive && !b_positive ? btorsim_bv_copy(add_urem)
+                                     : btorsim_bv_copy(neg_urem);
+
+    btorsim_bv_free (sign_a);
+    btorsim_bv_free (sign_b);
+    btorsim_bv_free (neg_a);
+    btorsim_bv_free (neg_b);
+    btorsim_bv_free (cond_a);
+    btorsim_bv_free (cond_b);
+    btorsim_bv_free (urem);
+    btorsim_bv_free (add);
+    btorsim_bv_free (neg_urem);
+    btorsim_bv_free (add_urem);
+    btorsim_bv_free (add_neg_urem);
+  }
+
+  assert (res);
+  assert (rem_bits_zero_dbg (res));
+  return res;
+}
+
+BtorSimBitVector *
 btorsim_bv_concat (const BtorSimBitVector *a, const BtorSimBitVector *b)
 {
   assert (a);

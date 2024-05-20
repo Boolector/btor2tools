@@ -267,6 +267,7 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_sll:
     case BTOR2_TAG_slt:
     case BTOR2_TAG_slte:
+    case BTOR2_TAG_smod:
     case BTOR2_TAG_sra:
     case BTOR2_TAG_srem:
     case BTOR2_TAG_srl:
@@ -288,7 +289,6 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_justice:
     case BTOR2_TAG_saddo:
     case BTOR2_TAG_sdivo:
-    case BTOR2_TAG_smod:
     case BTOR2_TAG_smulo:
     case BTOR2_TAG_ssubo:
     case BTOR2_TAG_uaddo:
@@ -623,6 +623,13 @@ simulate (int64_t id)
         assert (args[0].type == BtorSimState::Type::BITVEC);
         assert (args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_sll (args[0].bv_state, args[1].bv_state);
+        break;
+      case BTOR2_TAG_smod:
+        assert (l->nargs == 2);
+        assert (res.type == BtorSimState::Type::BITVEC);
+        assert (args[0].type == BtorSimState::Type::BITVEC);
+        assert (args[1].type == BtorSimState::Type::BITVEC);
+        res.bv_state = btorsim_bv_smod (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_srl:
         assert (l->nargs == 2);
