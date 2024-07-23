@@ -1431,7 +1431,6 @@ START:
       PARSE (ite, ternary_op);
       break;
     case 'j': PARSE (justice, justice); break;
-    case 'l': PARSE (state, input); break;
     case 'm': PARSE (mul, binary_op); break;
     case 'n':
       PARSE (nand, binary_op);
