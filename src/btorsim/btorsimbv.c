@@ -2042,7 +2042,7 @@ btorsim_bv_smod (const BtorSimBitVector *a, const BtorSimBitVector *b)
   assert (a->width == b->width);
 
   BtorSimBitVector *res = 0, *not_b, *sign_a, *sign_b, *neg_a, *neg_b, *add;
-  BtorSimBitVector *cond_a, *cond_b, *urem, *neg_urem, *add_urem, *add_neg_urem;
+  BtorSimBitVector *cond_a, *cond_b, *urem, *neg_urem;
   bool a_positive, b_positive;
 
   if (a->width == 1)
@@ -2071,12 +2071,10 @@ btorsim_bv_smod (const BtorSimBitVector *a, const BtorSimBitVector *b)
                                    : btorsim_bv_copy(b);
 
     neg_urem = btorsim_bv_neg (urem);
-    add_urem = btorsim_bv_add(urem, add);
-    add_neg_urem = btorsim_bv_add(neg_urem, add);
 
     res =  a_positive &&  b_positive ? btorsim_bv_copy(urem)
-        : !a_positive &&  b_positive ? btorsim_bv_copy(add_neg_urem)
-        :  a_positive && !b_positive ? btorsim_bv_copy(add_urem)
+        : !a_positive &&  b_positive ? btorsim_bv_add(neg_urem, add)
+        :  a_positive && !b_positive ? btorsim_bv_add(urem, add)
                                      : btorsim_bv_copy(neg_urem);
 
     btorsim_bv_free (sign_a);
@@ -2088,8 +2086,6 @@ btorsim_bv_smod (const BtorSimBitVector *a, const BtorSimBitVector *b)
     btorsim_bv_free (urem);
     btorsim_bv_free (add);
     btorsim_bv_free (neg_urem);
-    btorsim_bv_free (add_urem);
-    btorsim_bv_free (add_neg_urem);
   }
 
   assert (res);
