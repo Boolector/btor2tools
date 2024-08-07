@@ -243,6 +243,7 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_implies:
     case BTOR2_TAG_inc:
     case BTOR2_TAG_ite:
+    case BTOR2_TAG_iff:
     case BTOR2_TAG_mul:
     case BTOR2_TAG_nand:
     case BTOR2_TAG_neg:
@@ -256,6 +257,8 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_redand:
     case BTOR2_TAG_redor:
     case BTOR2_TAG_redxor:
+    case BTOR2_TAG_rol:
+    case BTOR2_TAG_ror:
     case BTOR2_TAG_sdiv:
     case BTOR2_TAG_sext:
     case BTOR2_TAG_sgt:
@@ -264,6 +267,7 @@ parse_model_line (Btor2Line *l)
     case BTOR2_TAG_sll:
     case BTOR2_TAG_slt:
     case BTOR2_TAG_slte:
+    case BTOR2_TAG_smod:
     case BTOR2_TAG_sra:
     case BTOR2_TAG_srem:
     case BTOR2_TAG_srl:
@@ -283,11 +287,8 @@ parse_model_line (Btor2Line *l)
 
     case BTOR2_TAG_fair:
     case BTOR2_TAG_justice:
-    case BTOR2_TAG_rol:
-    case BTOR2_TAG_ror:
     case BTOR2_TAG_saddo:
     case BTOR2_TAG_sdivo:
-    case BTOR2_TAG_smod:
     case BTOR2_TAG_smulo:
     case BTOR2_TAG_ssubo:
     case BTOR2_TAG_uaddo:
@@ -546,6 +547,20 @@ simulate (int64_t id)
         assert (args[0].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_redxor (args[0].bv_state);
         break;
+      case BTOR2_TAG_rol:
+        assert (l->nargs == 2);
+        assert (res.type == BtorSimState::Type::BITVEC);
+        assert (args[0].type == BtorSimState::Type::BITVEC);
+        assert (args[1].type == BtorSimState::Type::BITVEC);
+        res.bv_state = btorsim_bv_rol (args[0].bv_state, args[1].bv_state);
+        break;
+      case BTOR2_TAG_ror:
+        assert (l->nargs == 2);
+        assert (res.type == BtorSimState::Type::BITVEC);
+        assert (args[0].type == BtorSimState::Type::BITVEC);
+        assert (args[1].type == BtorSimState::Type::BITVEC);
+        res.bv_state = btorsim_bv_ror (args[0].bv_state, args[1].bv_state);
+        break;
       case BTOR2_TAG_slice:
         assert (l->nargs == 1);
         assert (res.type == BtorSimState::Type::BITVEC);
@@ -608,6 +623,13 @@ simulate (int64_t id)
         assert (args[0].type == BtorSimState::Type::BITVEC);
         assert (args[1].type == BtorSimState::Type::BITVEC);
         res.bv_state = btorsim_bv_sll (args[0].bv_state, args[1].bv_state);
+        break;
+      case BTOR2_TAG_smod:
+        assert (l->nargs == 2);
+        assert (res.type == BtorSimState::Type::BITVEC);
+        assert (args[0].type == BtorSimState::Type::BITVEC);
+        assert (args[1].type == BtorSimState::Type::BITVEC);
+        res.bv_state = btorsim_bv_smod (args[0].bv_state, args[1].bv_state);
         break;
       case BTOR2_TAG_srl:
         assert (l->nargs == 2);

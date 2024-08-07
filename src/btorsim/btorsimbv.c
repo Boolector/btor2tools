@@ -1736,20 +1736,52 @@ btorsim_bv_sra (const BtorSimBitVector *a, const BtorSimBitVector *b)
   assert (a->len == b->len);
   assert (a->width == b->width);
 
-  BtorSimBitVector *res, *sign_b, *srl1, *srl2, *not_a;
+  BtorSimBitVector *res, *sign_a, *srl1, *srl2, *not_a;
 
-  sign_b = btorsim_bv_slice (b, b->width - 1, b->width - 1);
+  sign_a = btorsim_bv_slice (a, a->width - 1, a->width - 1);
   srl1   = btorsim_bv_srl (a, b);
   not_a  = btorsim_bv_not (a);
   srl2   = btorsim_bv_srl (not_a, b);
-  res    = btorsim_bv_is_true (not_a) ? btorsim_bv_not (srl2)
+  res    = btorsim_bv_is_true (sign_a) ? btorsim_bv_not (srl2)
                                       : btorsim_bv_copy (srl1);
-  btorsim_bv_free (sign_b);
+  btorsim_bv_free (sign_a);
   btorsim_bv_free (srl1);
   btorsim_bv_free (srl2);
   btorsim_bv_free (not_a);
   set_rem_bits_to_zero (res);
   assert (rem_bits_zero_dbg (res));
+  return res;
+}
+
+BtorSimBitVector *
+btorsim_bv_rol (const BtorSimBitVector *a, const BtorSimBitVector *b) {
+  BtorSimBitVector *width = btorsim_bv_uint64_to_bv(a->width, a->width);
+  BtorSimBitVector *rev = btorsim_bv_sub(width, b);
+
+  BtorSimBitVector *sll_part = btorsim_bv_sll(a, b);
+  BtorSimBitVector *srl_part = btorsim_bv_srl(a, rev);
+  BtorSimBitVector *res = btorsim_bv_or(sll_part, srl_part);
+
+  btorsim_bv_free(width);
+  btorsim_bv_free(rev);
+  btorsim_bv_free(sll_part);
+  btorsim_bv_free(srl_part);
+  return res;
+}
+
+BtorSimBitVector *
+btorsim_bv_ror (const BtorSimBitVector *a, const BtorSimBitVector *b) {
+  BtorSimBitVector *width = btorsim_bv_uint64_to_bv(a->width, a->width);
+  BtorSimBitVector *rev = btorsim_bv_sub(width, b);
+
+  BtorSimBitVector *srl_part = btorsim_bv_srl(a, b);
+  BtorSimBitVector *sll_part = btorsim_bv_sll(a, rev);
+  BtorSimBitVector *res = btorsim_bv_or(srl_part, sll_part);
+
+  btorsim_bv_free(width);
+  btorsim_bv_free(rev);
+  btorsim_bv_free(srl_part);
+  btorsim_bv_free(sll_part);
   return res;
 }
 
@@ -1993,6 +2025,66 @@ btorsim_bv_srem (const BtorSimBitVector *a, const BtorSimBitVector *b)
     btorsim_bv_free (cond_a);
     btorsim_bv_free (cond_b);
     btorsim_bv_free (urem);
+    btorsim_bv_free (neg_urem);
+  }
+
+  assert (res);
+  assert (rem_bits_zero_dbg (res));
+  return res;
+}
+
+BtorSimBitVector *
+btorsim_bv_smod (const BtorSimBitVector *a, const BtorSimBitVector *b)
+{
+  assert (a);
+  assert (b);
+  assert (a->len == b->len);
+  assert (a->width == b->width);
+
+  BtorSimBitVector *res = 0, *not_b, *sign_a, *sign_b, *neg_a, *neg_b, *add;
+  BtorSimBitVector *cond_a, *cond_b, *urem, *neg_urem;
+  bool a_positive, b_positive;
+
+  if (a->width == 1)
+  {
+    not_b = btorsim_bv_not (b);
+    res   = btorsim_bv_and (a, not_b);
+    btorsim_bv_free (not_b);
+  }
+  else
+  {
+    sign_a = btorsim_bv_slice (a, a->width - 1, a->width - 1);
+    sign_b = btorsim_bv_slice (b, b->width - 1, b->width - 1);
+    a_positive = !btorsim_bv_is_true (sign_a);
+    b_positive = !btorsim_bv_is_true (sign_b);
+
+    neg_a  = btorsim_bv_neg (a);
+    neg_b  = btorsim_bv_neg (b);
+    cond_a = a_positive ? btorsim_bv_copy (a)
+                        : btorsim_bv_copy (neg_a);
+    cond_b = b_positive ? btorsim_bv_copy (b)
+                        : btorsim_bv_copy (neg_b);
+
+
+    urem     = btorsim_bv_urem (cond_a, cond_b);
+    add = btorsim_bv_is_zero(urem) ? btorsim_bv_zero(b->width)
+                                   : btorsim_bv_copy(b);
+
+    neg_urem = btorsim_bv_neg (urem);
+
+    res =  a_positive &&  b_positive ? btorsim_bv_copy(urem)
+        : !a_positive &&  b_positive ? btorsim_bv_add(neg_urem, add)
+        :  a_positive && !b_positive ? btorsim_bv_add(urem, add)
+                                     : btorsim_bv_copy(neg_urem);
+
+    btorsim_bv_free (sign_a);
+    btorsim_bv_free (sign_b);
+    btorsim_bv_free (neg_a);
+    btorsim_bv_free (neg_b);
+    btorsim_bv_free (cond_a);
+    btorsim_bv_free (cond_b);
+    btorsim_bv_free (urem);
+    btorsim_bv_free (add);
     btorsim_bv_free (neg_urem);
   }
 
