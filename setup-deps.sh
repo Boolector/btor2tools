@@ -6,10 +6,10 @@ rm -rf deps
 mkdir -p deps
 
 # Setup AIGER
-rm -rf aiger-1.9.4.tar.gz
-wget http://fmv.jku.at/aiger/aiger-1.9.4.tar.gz
-tar xf aiger-1.9.4.tar.gz
-mv aiger-1.9.4 deps/aiger
+rm -rf aiger-1.9.18.tar.gz
+wget https://github.com/arminbiere/aiger/archive/refs/tags/rel-1.9.18.tar.gz
+tar xf rel-1.9.18.tar.gz
+mv aiger-rel-1.9.18 deps/aiger
 
 
 # Setup Boolector
