@@ -387,7 +387,8 @@ add_state_to_aiger (Btor *btor,
                     aiger *aig,
                     BoolectorNode *state,
                     BoolectorNode *next,
-                    BoolectorNode *init)
+                    BoolectorNode *init,
+                    std::vector<std::pair<uint64_t, uint64_t> > &init_constrains)
 {
   size_t nbits;
   const char *sym;
@@ -414,18 +415,16 @@ add_state_to_aiger (Btor *btor,
 
   for (size_t i = 0; i < nbits; ++i)
   {
-    if (init_bits && init_bits[i] != 0 && init_bits[i] != 1)
-    {
-      /* Note: BTOR2 supports arbitrary initialization functions, but AIGER
-       * only supports 0/1/undefined. */
-      die ("Found non-constant initialization");
-    }
     sym = boolector_aig_get_symbol (amgr, state_bits[i]);
     if (next_bits)
     {
-      reset_val = init_bits ? init_bits[i] : state_bits[i];
       aiger_add_latch (aig, state_bits[i], next_bits[i], sym);
-      aiger_add_reset (aig, state_bits[i], reset_val);
+      if (!(init_bits && init_bits[i] != 0 && init_bits[i] != 1)) {
+        reset_val = init_bits ? init_bits[i] : state_bits[i];
+        aiger_add_reset (aig, state_bits[i], reset_val);
+      } else {
+        init_constrains.push_back(std::make_pair(state_bits[i], init_bits[i]));
+      }
     }
     else
     {
@@ -472,11 +471,23 @@ add_bad_to_aiger (Btor *btor,
   boolector_aig_free_bits (amgr, bits, nbits);
 }
 
+unsigned conj(aiger *aig, unsigned x, unsigned y) {
+  const unsigned new_var = (aig->maxvar + 1) * 2;
+  aiger_add_and(aig, new_var, x, y);
+  return new_var;
+};
+
+unsigned eq(aiger *aig, unsigned x, unsigned y) {
+  return aiger_not(conj(aig, aiger_not(conj(aig, x, y)),
+                        aiger_not(conj(aig, aiger_not(x), aiger_not(y)))));
+}
+
 static void
 generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
 {
   BoolectorAIGMgr *amgr;
   aiger *aig;
+  std::vector<std::pair<uint64_t, uint64_t> > init_constrains;
 
   amgr = boolector_aig_new (model.btor);
 
@@ -497,6 +508,7 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
   for (auto kv : model.init)
   {
     boolector_aig_bitblast (amgr, kv.second);
+    boolector_aig_visit (amgr, kv.second, aig_visitor, &aig_visitor_state);
   }
 
   for (auto kv : model.next)
@@ -512,7 +524,8 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
                         aig,
                         kv.second,
                         model.get_next (kv.first),
-                        model.get_init (kv.first));
+                        model.get_init (kv.first),
+                        init_constrains);
   }
 
   for (BoolectorNode *n : model.constraints)
@@ -533,6 +546,17 @@ generate_aiger (Btor2Model &model, bool ascii_mode, bool ignore_error)
   if (err && !ignore_error)
   {
     die (err);
+  }
+  
+  if (!init_constrains.empty()) {
+    unsigned init_latch = (aig->maxvar + 1) * 2;
+    aiger_add_latch(aig, init_latch, 0, "init latch");
+    aiger_add_reset(aig, init_latch, 1);
+    for (unsigned i = 0; i < init_constrains.size(); ++i) {
+      unsigned init_eq = eq(aig, init_constrains[i].first, init_constrains[i].second);
+      unsigned init = aiger_not(conj(aig, init_latch, aiger_not(init_eq)));
+      aiger_add_constraint(aig, init, 0);
+    }
   }
 
   aiger_write_to_file (
